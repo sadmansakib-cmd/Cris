@@ -29,6 +29,18 @@ dist-ssr
 # Turbo
 .turbo
 
+# Cris Agent (Python)
+apps/cris-agent/.env
+apps/cris-agent/data/
+apps/cris-agent/tokens/
+apps/cris-agent/logs/
+apps/cris-agent/venv/
+apps/cris-agent/.venv/
+apps/cris-agent/.pytest_cache/
+apps/cris-agent/**/__pycache__/
+__pycache__/
+*.pyc
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
