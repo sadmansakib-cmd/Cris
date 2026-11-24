@@ -53,9 +53,10 @@
 - [x] Phase 6 tests passing.
 
 ## Phase 7: Windows Setup Scripts & Documentation
-- [ ] `setup.ps1` automated environment and dependency installer.
-- [ ] `run.ps1` runner script.
-- [ ] `requirements.txt` with pinned versions and explanations.
-- [ ] `.env.example` template.
-- [ ] Detailed `README.md` with manual test checklist.
-- [ ] Root `README.md` note.
+- [x] `setup.ps1` automated environment and dependency installer.
+- [x] `run.ps1` runner script.
+- [x] `requirements.txt` with pinned versions and explanations.
+- [x] `.env.example` template.
+- [x] Detailed `README.md` with manual test checklist.
+- [x] Root `README.md` note.
+- [x] All 32 automated unit tests passing across 12 modules.

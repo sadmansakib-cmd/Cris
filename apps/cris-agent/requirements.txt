@@ -1,0 +1,34 @@
+# Cris Agent - Python Dependencies (Pinned Versions)
+# Windows 10/11 Local Jarvis-style Assistant
+
+# LLM & AI Providers
+google-genai==0.1.1                    # Official Google GenAI SDK for Gemini API & Live realtime audio
+google-generativeai==0.8.3             # Alternative client for Gemini API text generation
+
+# Voice & Speech Subsystem
+openwakeword==0.6.0                    # Local wake word detector ('Hey Cris') in memory, zero cloud mic streaming
+faster-whisper==1.0.3                  # Local multilingual STT model for automatic English & Bengali detection
+edge-tts==6.1.12                       # High-quality neural TTS voices (bn-BD for Bengali, en-US for English)
+sounddevice==0.5.1                     # Cross-platform audio input/output capture and device discovery
+numpy==1.26.4                          # Efficient audio PCM byte array processing for wake word detection
+
+# Computer Control & Automation
+pyautogui==0.9.54                      # Automated typing and keyboard combinations with kill switch checks
+keyboard==0.13.5                       # Low-level global hotkey listener for emergency abort (Ctrl+Alt+Q)
+psutil==6.1.0                          # Operating system monitoring for CPU, RAM, Disk, and Battery
+pillow==11.0.0                         # Screenshot capture and image validation
+send2trash==1.8.3                      # Safe file deletion to Windows Recycle Bin (strictly never permanent)
+
+# Web & Productivity
+duckduckgo-search==6.3.7               # Privacy-respecting web search without requiring external API keys
+playwright==1.49.0                     # Browser automation using dedicated isolated profile
+win10toast==0.9                        # Native Windows 10/11 desktop toast notifications for reminders
+
+# Google Workspace Integration
+google-api-python-client==2.154.0      # Google Calendar, Gmail, and Drive API client
+google-auth-httplib2==0.2.0            # Google OAuth HTTP transport adapter
+google-auth-oauthlib==1.2.1            # Desktop OAuth2 browser flow for Google Workspace credentials
+
+# Testing & Development
+pytest==8.3.3                          # Test runner for comprehensive mock-based unit tests
+pytest-mock==3.14.0                    # Pytest mocking helpers

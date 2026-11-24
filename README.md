@@ -42,6 +42,7 @@ docker compose exec api pnpm prisma db seed
 apps/
   api/          NestJS backend (auth, permissions, plugins, providers)
   web/          React + Vite frontend
+  cris-agent/   Voice-controlled local Windows PC assistant (Python 3.11)
 packages/
   sdk/          @hault/sdk — plugin authoring API
   shared/       shared zod schemas + DTOs
@@ -50,6 +51,10 @@ docs/hault/     architecture documentation
 ```
 
 See [`docs/hault/README.md`](./docs/hault/README.md) for the full spec.
+
+## Cris Voice Assistant
+
+Cris is a local, voice-controlled Windows PC assistant (Python 3.11) located in [`apps/cris-agent/`](./apps/cris-agent/README.md). It operates with local wake word detection ("Hey Cris"), Gemini models, bilingual support (English and Bengali), desktop automation, and an autonomous app-builder workflow. See [`apps/cris-agent/README.md`](./apps/cris-agent/README.md) for Windows setup and quickstart instructions.
 
 ## License
 
