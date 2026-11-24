@@ -28,10 +28,10 @@
 - [x] Phase 3 tests passing.
 
 ## Phase 4: Web, Productivity & Browser Tools
-- [ ] Web tools: DuckDuckGo `web_search`, `fetch_page` (read-only untrusted text), Open-Meteo `weather`, `news`.
-- [ ] Productivity tools: `notes`, `reminders` (Windows toast), `tasks`, `timers`, `daily_briefing`.
-- [ ] Browser automation via Playwright in dedicated isolated profile.
-- [ ] Phase 4 tests.
+- [x] Web tools: DuckDuckGo `web_search`, `fetch_page` (read-only untrusted text), Open-Meteo `weather`, `news`.
+- [x] Productivity tools: `notes`, `reminders` (Windows toast), `tasks`, `timers`, `daily_briefing`.
+- [x] Browser automation via Playwright in dedicated isolated profile (`data/browser_profile`).
+- [x] Phase 4 tests passing.
 
 ## Phase 5: Google Integrations
 - [ ] Desktop OAuth2 flow storing tokens in `tokens/`.
