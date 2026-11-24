@@ -48,7 +48,8 @@ from tools import (
     tasks_tool,
     timers_tool,
     daily_briefing,
-    browser_automation
+    browser_automation,
+    email_tool
 )
 from integrations.google import calendar_tool, gmail_tool, drive_tool
 from integrations.github import github_client
@@ -85,6 +86,7 @@ def create_tool_registry(gate: ConfirmationGate) -> ToolRegistry:
     reg.register_module(timers_tool)
     reg.register_module(daily_briefing)
     reg.register_module(browser_automation)
+    reg.register_module(email_tool)
     # Google & GitHub Integrations
     reg.register_module(calendar_tool)
     reg.register_module(gmail_tool)
