@@ -34,11 +34,11 @@
 - [x] Phase 4 tests passing.
 
 ## Phase 5: Google Integrations
-- [ ] Desktop OAuth2 flow storing tokens in `tokens/`.
-- [ ] Calendar read/create.
-- [ ] Gmail read/search/draft (send gated by confirmation).
-- [ ] Drive search/download under `allowed_roots`.
-- [ ] Phase 5 tests with mocks.
+- [x] Desktop OAuth2 flow storing tokens in `tokens/`.
+- [x] Calendar read/create (`integrations/google/calendar_tool.py`).
+- [x] Gmail read/search/draft with confirmation gate for sending (`integrations/google/gmail_tool.py`).
+- [x] Drive search/download under `allowed_roots` (`integrations/google/drive_tool.py`).
+- [x] Phase 5 tests passing.
 
 ## Phase 6: GitHub, Deploy Helper & App-Builder Workflow
 - [ ] GitHub integration (`gh` CLI wrapper with token fallback).
