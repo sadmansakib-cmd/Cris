@@ -1,0 +1,24 @@
+{
+  "id": "hault.academic-search",
+  "name": "Academic Search",
+  "version": "0.1.0",
+  "description": "Search arXiv, Semantic Scholar, PubMed.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "net.fetch",
+      "scope": "host:api.semanticscholar.org",
+      "reason": "Search papers"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/academic",
+        "title": "Academic Search",
+        "icon": "library"
+      }
+    ]
+  }
+}

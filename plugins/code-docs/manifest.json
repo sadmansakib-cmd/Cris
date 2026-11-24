@@ -1,0 +1,24 @@
+{
+  "id": "hault.code-docs",
+  "name": "Docs",
+  "version": "0.1.0",
+  "description": "Fetch and search language / framework docs.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "net.fetch",
+      "scope": "url:*",
+      "reason": "Fetch docs"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/docs",
+        "title": "Docs",
+        "icon": "book"
+      }
+    ]
+  }
+}

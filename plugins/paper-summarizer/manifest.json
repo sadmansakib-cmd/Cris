@@ -1,0 +1,29 @@
+{
+  "id": "hault.paper-summarizer",
+  "name": "Paper Summarizer",
+  "version": "0.1.0",
+  "description": "Extract structured summaries from PDFs.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "ai.chat.completion",
+      "scope": "*",
+      "reason": "Summarize"
+    },
+    {
+      "action": "storage.read",
+      "scope": "namespace:papers/*",
+      "reason": "Read PDFs"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/summarize-paper",
+        "title": "Paper Summarizer",
+        "icon": "file-text"
+      }
+    ]
+  }
+}

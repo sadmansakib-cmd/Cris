@@ -1,0 +1,24 @@
+{
+  "id": "hault.discord",
+  "name": "Discord",
+  "version": "0.1.0",
+  "description": "Bot + webhook integration.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "secret.read",
+      "scope": "key:discord.*",
+      "reason": "Use bot token"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/discord",
+        "title": "Discord",
+        "icon": "hash"
+      }
+    ]
+  }
+}

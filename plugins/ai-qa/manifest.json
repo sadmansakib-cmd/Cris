@@ -1,0 +1,29 @@
+{
+  "id": "hault.ai-qa",
+  "name": "AI Q&A",
+  "version": "0.1.0",
+  "description": "RAG-powered Q&A over your knowledge base.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "ai.chat.completion",
+      "scope": "*",
+      "reason": "Answer"
+    },
+    {
+      "action": "vector.query",
+      "scope": "*",
+      "reason": "Retrieve"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/ask",
+        "title": "AI Q&A",
+        "icon": "help-circle"
+      }
+    ]
+  }
+}

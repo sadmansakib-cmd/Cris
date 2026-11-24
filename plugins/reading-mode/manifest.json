@@ -1,0 +1,24 @@
+{
+  "id": "hault.reading-mode",
+  "name": "Reading Mode",
+  "version": "0.1.0",
+  "description": "Reader-view extraction for any URL.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "net.fetch",
+      "scope": "url:*",
+      "reason": "Fetch article"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/read",
+        "title": "Reading Mode",
+        "icon": "book-open"
+      }
+    ]
+  }
+}

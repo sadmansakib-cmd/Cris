@@ -1,0 +1,29 @@
+{
+  "id": "hault.downloads",
+  "name": "Downloads",
+  "version": "0.1.0",
+  "description": "Managed download queue with resume + hash verify.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "net.fetch",
+      "scope": "url:*",
+      "reason": "Download remote files"
+    },
+    {
+      "action": "computer.fs.write",
+      "scope": "path:downloads/*",
+      "reason": "Save downloads"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/downloads",
+        "title": "Downloads",
+        "icon": "download"
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "hault.research-mode",
+  "name": "Research Mode",
+  "version": "0.1.0",
+  "description": "Multi-source research with citations.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "ai.chat.completion",
+      "scope": "*",
+      "reason": "Summarize"
+    },
+    {
+      "action": "net.fetch",
+      "scope": "url:*",
+      "reason": "Fetch sources"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/research",
+        "title": "Research Mode",
+        "icon": "flask-conical"
+      }
+    ]
+  }
+}

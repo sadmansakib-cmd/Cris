@@ -1,0 +1,24 @@
+{
+  "id": "hault.voice-trigger",
+  "name": "Voice Trigger",
+  "version": "0.1.0",
+  "description": "Wake-word activation of any command.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "voice.wakeword",
+      "scope": "device:*",
+      "reason": "Listen for wake word"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/voice-trigger",
+        "title": "Voice Trigger",
+        "icon": "mic"
+      }
+    ]
+  }
+}

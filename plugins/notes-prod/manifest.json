@@ -1,0 +1,24 @@
+{
+  "id": "hault.notes-prod",
+  "name": "Quick Notes",
+  "version": "0.1.0",
+  "description": "Lightweight sticky notes.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:quick-notes/*",
+      "reason": "Store notes"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/quick-notes",
+        "title": "Quick Notes",
+        "icon": "notebook"
+      }
+    ]
+  }
+}

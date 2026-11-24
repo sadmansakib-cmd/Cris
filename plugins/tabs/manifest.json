@@ -1,0 +1,24 @@
+{
+  "id": "hault.tabs",
+  "name": "Tabs",
+  "version": "0.1.0",
+  "description": "Multi-tab session management.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "browser.tabs",
+      "scope": "session:*",
+      "reason": "Manage tabs"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/tabs",
+        "title": "Tabs",
+        "icon": "layout"
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "hault.whatsapp",
+  "name": "WhatsApp",
+  "version": "0.1.0",
+  "description": "WhatsApp Business Cloud API.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "secret.read",
+      "scope": "key:whatsapp.*",
+      "reason": "Use API token"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/whatsapp",
+        "title": "WhatsApp",
+        "icon": "message-square"
+      }
+    ]
+  }
+}

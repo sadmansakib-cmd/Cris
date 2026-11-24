@@ -1,0 +1,18 @@
+{
+  "id": "hault.pomodoro",
+  "name": "Pomodoro",
+  "version": "0.1.0",
+  "description": "Focus timer with session logs.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [],
+  "ui": {
+    "routes": [
+      {
+        "path": "/pomodoro",
+        "title": "Pomodoro",
+        "icon": "timer"
+      }
+    ]
+  }
+}

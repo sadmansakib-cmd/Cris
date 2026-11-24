@@ -1,0 +1,24 @@
+{
+  "id": "hault.api-testing",
+  "name": "API Testing",
+  "version": "0.1.0",
+  "description": "Postman-style HTTP client with collections.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "net.fetch",
+      "scope": "url:*",
+      "reason": "Send requests"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/api",
+        "title": "API Testing",
+        "icon": "zap"
+      }
+    ]
+  }
+}

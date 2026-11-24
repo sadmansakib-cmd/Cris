@@ -1,0 +1,24 @@
+{
+  "id": "hault.habits",
+  "name": "Habits",
+  "version": "0.1.0",
+  "description": "Habit streaks + reminders.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:habits/*",
+      "reason": "Store habits"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/habits",
+        "title": "Habits",
+        "icon": "repeat"
+      }
+    ]
+  }
+}

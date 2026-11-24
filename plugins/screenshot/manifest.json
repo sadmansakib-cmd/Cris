@@ -1,0 +1,25 @@
+{
+  "id": "hault.screenshot",
+  "name": "Screenshot",
+  "version": "0.1.0",
+  "description": "Region + window screenshots, annotations, quick share.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "medium",
+  "permissions": [
+    {
+      "action": "computer.screen.capture",
+      "scope": "display:*",
+      "reason": "Capture screen"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/screenshot",
+        "title": "Screenshot",
+        "icon": "camera"
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "hault.summaries",
+  "name": "Summaries",
+  "version": "0.1.0",
+  "description": "YouTube + website summarization.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "ai.chat.completion",
+      "scope": "*",
+      "reason": "Summarize"
+    },
+    {
+      "action": "net.fetch",
+      "scope": "url:*",
+      "reason": "Fetch transcript/page"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/summaries",
+        "title": "Summaries",
+        "icon": "align-left"
+      }
+    ]
+  }
+}

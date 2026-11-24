@@ -1,0 +1,20 @@
+{
+  "id": "hault.computer-control",
+  "name": "Computer Control",
+  "version": "0.1.0",
+  "description": "Screen capture, mouse/keyboard automation, and shell execution — all gated by explicit user consent.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    { "action": "computer.screen.capture", "scope": "display:*", "reason": "Read pixels from your screen" },
+    { "action": "computer.input.mouse", "scope": "display:*", "reason": "Move the mouse and click on your behalf" },
+    { "action": "computer.input.keyboard", "scope": "display:*", "reason": "Type on your behalf" },
+    { "action": "computer.shell.exec", "scope": "cmd:*", "reason": "Run a shell command" },
+    { "action": "computer.fs.read", "scope": "path:*", "reason": "Read files from your machine" },
+    { "action": "computer.fs.write", "scope": "path:*", "reason": "Write files on your machine" }
+  ],
+  "ui": {
+    "routes": [{ "path": "/computer", "title": "Computer", "icon": "monitor" }]
+  }
+}

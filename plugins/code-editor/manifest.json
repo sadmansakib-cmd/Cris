@@ -1,0 +1,29 @@
+{
+  "id": "hault.code-editor",
+  "name": "Code Editor",
+  "version": "0.1.0",
+  "description": "Monaco-based editor with LSP bridge.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "computer.fs.read",
+      "scope": "path:*",
+      "reason": "Read source"
+    },
+    {
+      "action": "computer.fs.write",
+      "scope": "path:*",
+      "reason": "Write source"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/code",
+        "title": "Code Editor",
+        "icon": "code"
+      }
+    ]
+  }
+}

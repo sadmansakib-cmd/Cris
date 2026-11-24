@@ -1,0 +1,24 @@
+{
+  "id": "hault.ai-coding",
+  "name": "AI Coding",
+  "version": "0.1.0",
+  "description": "Inline suggestions + repo-wide edits.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "ai.chat.completion",
+      "scope": "*",
+      "reason": "Generate code"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/ai-coding",
+        "title": "AI Coding",
+        "icon": "sparkles"
+      }
+    ]
+  }
+}

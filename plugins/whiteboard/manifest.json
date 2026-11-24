@@ -1,0 +1,24 @@
+{
+  "id": "hault.whiteboard",
+  "name": "Whiteboard",
+  "version": "0.1.0",
+  "description": "Excalidraw-style infinite canvas.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:whiteboard/*",
+      "reason": "Store canvases"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/whiteboard",
+        "title": "Whiteboard",
+        "icon": "pen-tool"
+      }
+    ]
+  }
+}

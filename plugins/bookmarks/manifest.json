@@ -1,0 +1,24 @@
+{
+  "id": "hault.bookmarks",
+  "name": "Bookmarks",
+  "version": "0.1.0",
+  "description": "Bookmarks with tags and full-text search.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:bookmarks/*",
+      "reason": "Save bookmarks"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/bookmarks",
+        "title": "Bookmarks",
+        "icon": "bookmark"
+      }
+    ]
+  }
+}

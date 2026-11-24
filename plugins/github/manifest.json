@@ -1,0 +1,29 @@
+{
+  "id": "hault.github",
+  "name": "GitHub",
+  "version": "0.1.0",
+  "description": "Repos, issues, PRs, actions.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "oauth.token.read",
+      "scope": "provider:github",
+      "reason": "GitHub session"
+    },
+    {
+      "action": "net.fetch",
+      "scope": "host:api.github.com",
+      "reason": "GitHub API"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/github",
+        "title": "GitHub",
+        "icon": "github"
+      }
+    ]
+  }
+}

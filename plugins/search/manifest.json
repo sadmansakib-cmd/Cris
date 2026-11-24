@@ -1,0 +1,24 @@
+{
+  "id": "hault.search",
+  "name": "Search",
+  "version": "0.1.0",
+  "description": "Full-text search across indexed files and notes.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "computer.fs.read",
+      "scope": "path:*",
+      "reason": "Index files for search"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/search",
+        "title": "Search",
+        "icon": "search"
+      }
+    ]
+  }
+}

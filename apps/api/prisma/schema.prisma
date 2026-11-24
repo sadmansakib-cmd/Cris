@@ -1,0 +1,198 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users & Auth ──────────────────────────────────────────────
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String?
+  displayName     String
+  avatarUrl       String?
+  locale          String   @default("en")
+  timezone        String   @default("UTC")
+  status          UserStatus @default(ACTIVE)
+  isAdmin         Boolean  @default(false)
+  mustChangePassword Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sessions       Session[]
+  credentials    Credential[]
+  totp           TotpSecret?
+  oauthAccounts  OAuthAccount[]
+  grants         PermissionGrant[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+  settings       UserSetting[]
+  pluginInstalls PluginInstall[]
+}
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshHash  String   @unique
+  userAgent    String?
+  ip           String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model TotpSecret {
+  userId       String   @id
+  secretEnc    Bytes
+  confirmedAt  DateTime?
+  recoveryHash String[]
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Credential {
+  id           String   @id @default(cuid())
+  userId       String
+  credentialId Bytes    @unique
+  publicKey    Bytes
+  counter      BigInt
+  transports   String[]
+  label        String
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OAuthAccount {
+  id             String @id @default(cuid())
+  userId         String
+  provider       String
+  providerId     String
+  accessTokenEnc  Bytes?
+  refreshTokenEnc Bytes?
+  expiresAt      DateTime?
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerId])
+}
+
+// ─── Permissions ───────────────────────────────────────────────
+model PermissionGrant {
+  id          String   @id @default(cuid())
+  userId      String
+  pluginSlug  String
+  action      String
+  scope       Json     @default("{}")
+  grantedAt   DateTime @default(now())
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, pluginSlug, action])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  actorType  String
+  actorId    String?
+  action     String
+  target     String?
+  outcome    String
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+  user       User? @relation(fields: [userId], references: [id])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ─── Notifications & Settings ──────────────────────────────────
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String
+  title     String
+  body      String?
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, readAt])
+}
+
+model UserSetting {
+  userId    String
+  namespace String
+  key       String
+  value     Json
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([userId, namespace, key])
+}
+
+model SystemSetting {
+  namespace String
+  key       String
+  value     Json
+  updatedAt DateTime @updatedAt
+  @@id([namespace, key])
+}
+
+// ─── Plugin Registry ───────────────────────────────────────────
+model Plugin {
+  slug        String   @id
+  name        String
+  version     String
+  source      String
+  manifest    Json
+  enabled     Boolean  @default(true)
+  installedAt DateTime @default(now())
+  installs    PluginInstall[]
+}
+
+model PluginInstall {
+  id          String @id @default(cuid())
+  userId      String
+  pluginSlug  String
+  enabled     Boolean @default(true)
+  settings    Json    @default("{}")
+  installedAt DateTime @default(now())
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plugin      Plugin @relation(fields: [pluginSlug], references: [slug], onDelete: Cascade)
+  @@unique([userId, pluginSlug])
+}
+
+// ─── AI Chat ───────────────────────────────────────────────────
+model ChatThread {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("New Chat")
+  model     String?
+  provider  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  ChatMessage[]
+  @@index([userId, updatedAt])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  role      String   // system | user | assistant | tool
+  content   String
+  toolCalls Json?
+  tokensIn  Int?
+  tokensOut Int?
+  createdAt DateTime @default(now())
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  @@index([threadId, createdAt])
+}

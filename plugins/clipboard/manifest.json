@@ -1,0 +1,29 @@
+{
+  "id": "hault.clipboard",
+  "name": "Clipboard",
+  "version": "0.1.0",
+  "description": "Clipboard history + pinned snippets.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "computer.clipboard.read",
+      "scope": "*",
+      "reason": "Read clipboard"
+    },
+    {
+      "action": "computer.clipboard.write",
+      "scope": "*",
+      "reason": "Write clipboard"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/clipboard",
+        "title": "Clipboard",
+        "icon": "clipboard"
+      }
+    ]
+  }
+}

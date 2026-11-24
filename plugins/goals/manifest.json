@@ -1,0 +1,24 @@
+{
+  "id": "hault.goals",
+  "name": "Goals",
+  "version": "0.1.0",
+  "description": "OKR-style goal tracking.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:goals/*",
+      "reason": "Store goals"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/goals",
+        "title": "Goals",
+        "icon": "target"
+      }
+    ]
+  }
+}

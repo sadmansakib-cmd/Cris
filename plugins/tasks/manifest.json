@@ -1,0 +1,24 @@
+{
+  "id": "hault.tasks",
+  "name": "Tasks",
+  "version": "0.1.0",
+  "description": "GTD-style task manager.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:tasks/*",
+      "reason": "Store tasks"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/tasks",
+        "title": "Tasks",
+        "icon": "check-square"
+      }
+    ]
+  }
+}

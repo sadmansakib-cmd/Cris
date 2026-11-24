@@ -1,0 +1,24 @@
+{
+  "id": "hault.lit-review",
+  "name": "Literature Review",
+  "version": "0.1.0",
+  "description": "AI-assisted systematic literature reviews.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "ai.chat.completion",
+      "scope": "*",
+      "reason": "Analyze"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/lit-review",
+        "title": "Literature Review",
+        "icon": "notebook-pen"
+      }
+    ]
+  }
+}

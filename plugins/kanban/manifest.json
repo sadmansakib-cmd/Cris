@@ -1,0 +1,24 @@
+{
+  "id": "hault.kanban",
+  "name": "Kanban",
+  "version": "0.1.0",
+  "description": "Project boards.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:kanban/*",
+      "reason": "Store boards"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/kanban",
+        "title": "Kanban",
+        "icon": "columns"
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "hault.telegram",
+  "name": "Telegram",
+  "version": "0.1.0",
+  "description": "Bot API + user API (MTProto) bridge.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "secret.read",
+      "scope": "key:telegram.*",
+      "reason": "Use bot token"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/telegram",
+        "title": "Telegram",
+        "icon": "send"
+      }
+    ]
+  }
+}

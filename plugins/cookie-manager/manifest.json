@@ -1,0 +1,25 @@
+{
+  "id": "hault.cookie-manager",
+  "name": "Cookie Manager",
+  "version": "0.1.0",
+  "description": "Inspect, export, and clear browser cookies per site.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "medium",
+  "permissions": [
+    {
+      "action": "browser.cookies",
+      "scope": "domain:*",
+      "reason": "Read/write cookies"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/cookies",
+        "title": "Cookie Manager",
+        "icon": "cookie"
+      }
+    ]
+  }
+}

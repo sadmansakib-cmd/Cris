@@ -1,0 +1,30 @@
+{
+  "id": "hault.autofill",
+  "name": "Autofill",
+  "version": "0.1.0",
+  "description": "Secure per-site autofill from the credential vault.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "vault.read",
+      "scope": "entry:*",
+      "reason": "Read credentials"
+    },
+    {
+      "action": "browser.input",
+      "scope": "tab:*",
+      "reason": "Fill form"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/autofill",
+        "title": "Autofill",
+        "icon": "form-input"
+      }
+    ]
+  }
+}

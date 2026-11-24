@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "HAULT",
+    "slug": "hault-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "hault",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "app.hault.mobile",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "HAULT uses the microphone for voice commands and dictation.",
+        "NSCameraUsageDescription": "HAULT uses the camera for OCR and vision features.",
+        "NSPhotoLibraryUsageDescription": "HAULT accesses photos to import documents and images."
+      }
+    },
+    "android": {
+      "package": "app.hault.mobile",
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "apiBase": "https://api.hault.local"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "hault.docker",
+  "name": "Docker",
+  "version": "0.1.0",
+  "description": "Manage local Docker containers and images.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "computer.shell.exec",
+      "scope": "cmd:docker",
+      "reason": "Docker CLI"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/docker",
+        "title": "Docker",
+        "icon": "container"
+      }
+    ]
+  }
+}

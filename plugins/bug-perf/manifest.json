@@ -1,0 +1,24 @@
+{
+  "id": "hault.bug-perf",
+  "name": "Bug & Perf",
+  "version": "0.1.0",
+  "description": "Log tailing, flamegraph viewer, error triage.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "computer.fs.read",
+      "scope": "path:*",
+      "reason": "Read logs"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/bug",
+        "title": "Bug & Perf",
+        "icon": "bug"
+      }
+    ]
+  }
+}

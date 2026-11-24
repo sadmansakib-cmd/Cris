@@ -1,0 +1,24 @@
+{
+  "id": "hault.citations",
+  "name": "Citations",
+  "version": "0.1.0",
+  "description": "Zotero-like citation manager (BibTeX, CSL).",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:citations/*",
+      "reason": "Store references"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/citations",
+        "title": "Citations",
+        "icon": "quote"
+      }
+    ]
+  }
+}

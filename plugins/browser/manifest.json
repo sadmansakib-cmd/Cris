@@ -1,0 +1,30 @@
+{
+  "id": "hault.browser",
+  "name": "Browser",
+  "version": "0.1.0",
+  "description": "Headless Playwright browser sessions with cookies and profiles.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "browser.launch",
+      "scope": "profile:*",
+      "reason": "Launch browser"
+    },
+    {
+      "action": "browser.navigate",
+      "scope": "url:*",
+      "reason": "Navigate"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/browser",
+        "title": "Browser",
+        "icon": "globe"
+      }
+    ]
+  }
+}

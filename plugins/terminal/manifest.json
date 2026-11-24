@@ -1,0 +1,25 @@
+{
+  "id": "hault.terminal",
+  "name": "Terminal",
+  "version": "0.1.0",
+  "description": "Web terminal (pty) with recording.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "computer.shell.exec",
+      "scope": "cmd:*",
+      "reason": "Run shell commands"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/terminal",
+        "title": "Terminal",
+        "icon": "terminal"
+      }
+    ]
+  }
+}

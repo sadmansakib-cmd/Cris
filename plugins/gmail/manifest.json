@@ -1,0 +1,30 @@
+{
+  "id": "hault.gmail",
+  "name": "Gmail",
+  "version": "0.1.0",
+  "description": "Read, compose, label Gmail via OAuth.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "oauth.token.read",
+      "scope": "provider:google",
+      "reason": "Use Google session"
+    },
+    {
+      "action": "net.fetch",
+      "scope": "host:gmail.googleapis.com",
+      "reason": "Call Gmail API"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/gmail",
+        "title": "Gmail",
+        "icon": "mail"
+      }
+    ]
+  }
+}

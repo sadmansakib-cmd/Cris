@@ -1,0 +1,20 @@
+{
+  "id": "hault.ai-chat",
+  "name": "AI Chat",
+  "version": "0.1.0",
+  "description": "Multi-provider AI chat with streaming, tool-calls, and per-thread memory.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    { "action": "ai.chat.completion", "scope": "provider:*", "reason": "Send prompts to the configured AI provider" },
+    { "action": "storage.read", "scope": "namespace:ai-chat/*", "reason": "Read prior chat threads" },
+    { "action": "storage.write", "scope": "namespace:ai-chat/*", "reason": "Persist new messages" }
+  ],
+  "ui": {
+    "routes": [{ "path": "/chat", "title": "AI Chat", "icon": "message-circle" }]
+  },
+  "settings": [
+    { "key": "defaultModel", "label": "Default model", "type": "string", "default": "gpt-4o-mini" },
+    { "key": "systemPrompt", "label": "System prompt", "type": "text", "default": "You are a helpful assistant." }
+  ]
+}

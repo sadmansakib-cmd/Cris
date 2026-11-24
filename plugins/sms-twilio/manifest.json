@@ -1,0 +1,29 @@
+{
+  "id": "hault.sms-twilio",
+  "name": "SMS",
+  "version": "0.1.0",
+  "description": "Twilio-compatible SMS gateway.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "secret.read",
+      "scope": "key:twilio.*",
+      "reason": "Use API creds"
+    },
+    {
+      "action": "net.fetch",
+      "scope": "host:api.twilio.com",
+      "reason": "Send SMS"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/sms",
+        "title": "SMS",
+        "icon": "message-circle"
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "hault.automations",
+  "name": "Automations",
+  "version": "0.1.0",
+  "description": "IFTTT-style trigger → action pipelines.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "plugin.invoke",
+      "scope": "*",
+      "reason": "Invoke other plugins"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/automations",
+        "title": "Automations",
+        "icon": "workflow"
+      }
+    ]
+  }
+}

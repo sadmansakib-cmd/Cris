@@ -1,0 +1,25 @@
+{
+  "id": "hault.folders",
+  "name": "Folders",
+  "version": "0.1.0",
+  "description": "Create, move, and delete folders.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "computer.fs.write",
+      "scope": "path:*",
+      "reason": "Modify folders"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/folders",
+        "title": "Folders",
+        "icon": "folders"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "hault.backup",
+  "name": "Backup",
+  "version": "0.1.0",
+  "description": "Encrypted incremental backups to any storage provider.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "medium",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:backups/*",
+      "reason": "Store backups"
+    },
+    {
+      "action": "computer.fs.read",
+      "scope": "path:*",
+      "reason": "Read files to back up"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/backup",
+        "title": "Backup",
+        "icon": "shield-check"
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "hault.zip",
+  "name": "Archive",
+  "version": "0.1.0",
+  "description": "Create and extract zip / tar / 7z archives.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "computer.fs.read",
+      "scope": "path:*",
+      "reason": "Read source files"
+    },
+    {
+      "action": "computer.fs.write",
+      "scope": "path:*",
+      "reason": "Write archive"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/archives",
+        "title": "Archive",
+        "icon": "archive"
+      }
+    ]
+  }
+}

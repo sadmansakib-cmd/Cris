@@ -1,0 +1,24 @@
+{
+  "id": "hault.health",
+  "name": "Health",
+  "version": "0.1.0",
+  "description": "Weight, sleep, workout, nutrition logs.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "storage.write",
+      "scope": "namespace:health/*",
+      "reason": "Store health data"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/health",
+        "title": "Health",
+        "icon": "heart"
+      }
+    ]
+  }
+}

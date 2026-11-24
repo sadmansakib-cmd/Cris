@@ -1,0 +1,24 @@
+{
+  "id": "hault.ocr",
+  "name": "OCR",
+  "version": "0.1.0",
+  "description": "Extract text from images via the vision provider.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "permissions": [
+    {
+      "action": "vision.ocr",
+      "scope": "image:*",
+      "reason": "Run OCR on an image"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/ocr",
+        "title": "OCR",
+        "icon": "scan-text"
+      }
+    ]
+  }
+}

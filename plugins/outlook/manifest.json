@@ -1,0 +1,30 @@
+{
+  "id": "hault.outlook",
+  "name": "Outlook",
+  "version": "0.1.0",
+  "description": "Microsoft Graph mail integration.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "oauth.token.read",
+      "scope": "provider:microsoft",
+      "reason": "Use MS session"
+    },
+    {
+      "action": "net.fetch",
+      "scope": "host:graph.microsoft.com",
+      "reason": "Call Graph"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/outlook",
+        "title": "Outlook",
+        "icon": "inbox"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "hault.files",
+  "name": "Files",
+  "version": "0.1.0",
+  "description": "Browse, read, write, and organize local files.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "high",
+  "permissions": [
+    {
+      "action": "computer.fs.read",
+      "scope": "path:*",
+      "reason": "Read files"
+    },
+    {
+      "action": "computer.fs.write",
+      "scope": "path:*",
+      "reason": "Write files"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/files",
+        "title": "Files",
+        "icon": "folder"
+      }
+    ]
+  }
+}

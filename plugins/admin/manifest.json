@@ -1,0 +1,25 @@
+{
+  "id": "hault.admin",
+  "name": "Admin",
+  "version": "0.1.0",
+  "description": "Logs, analytics, errors, API usage, sessions.",
+  "author": "HAULT Core",
+  "entry": "dist/index.js",
+  "danger": "medium",
+  "permissions": [
+    {
+      "action": "admin.*",
+      "scope": "*",
+      "reason": "Full admin surface"
+    }
+  ],
+  "ui": {
+    "routes": [
+      {
+        "path": "/admin",
+        "title": "Admin",
+        "icon": "shield"
+      }
+    ]
+  }
+}
