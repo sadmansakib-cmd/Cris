@@ -13,11 +13,11 @@
 - [x] Unit tests for Phase 1 (`tests/test_config.py`, `tests/test_memory.py`, `tests/test_personality.py`, `tests/test_llm_provider.py`).
 
 ## Phase 2: Confirmation Gate & Safe System Tools
-- [ ] Non-bypassable `ConfirmationGate` in `core/confirmation_gate.py`.
-- [ ] Tool registry contract (`TOOL_NAME`, `TOOL_DESC`, `TOOL_PARAMS`, `execute()`).
-- [ ] Safe computer tools: `open_app`, `window_manager`, `volume_brightness`, `screenshot`, `clipboard`, `system_status`, `keyboard_mouse` (with Ctrl+Alt+Q kill switch).
-- [ ] Safe file tools restricted to `allowed_roots`: `file_search`, `file_read`, `file_write`, `file_move`, `file_copy`, `file_delete` (via `send2trash`).
-- [ ] Phase 2 unit tests with mock OS calls.
+- [x] Non-bypassable `ConfirmationGate` in `core/confirmation_gate.py`.
+- [x] Tool registry contract (`TOOL_NAME`, `TOOL_DESC`, `TOOL_PARAMS`, `execute()`) in `tools/registry.py`.
+- [x] Safe computer tools: `open_app`, `window_manager`, `volume_brightness`, `screenshot`, `clipboard`, `system_status`, `keyboard_mouse` (with Ctrl+Alt+Q kill switch).
+- [x] Safe file tools restricted to `allowed_roots`: `file_search`, `file_read`, `file_write`, `file_move`, `file_copy`, `file_delete` (via `send2trash`).
+- [x] Phase 2 unit tests with mock OS calls.
 
 ## Phase 3: Voice Pipeline & Live Mode
 - [ ] Local wake word detection via `openWakeWord` ("Hey Cris").
