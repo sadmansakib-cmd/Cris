@@ -20,11 +20,12 @@
 - [x] Phase 2 unit tests with mock OS calls.
 
 ## Phase 3: Voice Pipeline & Live Mode
-- [ ] Local wake word detection via `openWakeWord` ("Hey Cris").
-- [ ] Silence detection & configurable session timeout (default 20s).
-- [ ] Pipeline mode: `openWakeWord` -> `faster-whisper` -> Gemini -> `edge-tts` (Bangla & English voices).
-- [ ] Live mode: Gemini Live realtime audio API via official `google-genai` SDK.
-- [ ] Device selection & audio diagnostics.
+- [x] Local wake word detection via `openWakeWord` ("Hey Cris").
+- [x] Silence detection & configurable session timeout (default 20s).
+- [x] Pipeline mode: `openWakeWord` -> `faster-whisper` -> Gemini -> `edge-tts` (Bangla & English voices).
+- [x] Live mode: Gemini Live realtime audio API via official `google-genai` SDK.
+- [x] Device selection & audio diagnostics (`core/audio_devices.py`).
+- [x] Phase 3 tests passing.
 
 ## Phase 4: Web, Productivity & Browser Tools
 - [ ] Web tools: DuckDuckGo `web_search`, `fetch_page` (read-only untrusted text), Open-Meteo `weather`, `news`.
