@@ -41,15 +41,16 @@
 - [x] Phase 5 tests passing.
 
 ## Phase 6: GitHub, Deploy Helper & App-Builder Workflow
-- [ ] GitHub integration (`gh` CLI wrapper with token fallback).
-- [ ] Deploy helper for Cloudflare Pages and Netlify (confirmation gated).
-- [ ] Complete App-Builder workflow:
-  1. Project spec & UI brief generation (original designs).
+- [x] GitHub integration (`integrations/github/github_client.py`) with `gh` CLI and REST API fallback.
+- [x] Deploy helper for Cloudflare Pages and Netlify (`workflows/deploy_helper.py`) with confirmation gate.
+- [x] Complete App-Builder workflow (`workflows/app_builder.py`):
+  1. Project spec & original UI brief generation.
   2. Code generation under `allowed_roots`.
-  3. Verification loop (install, lint, test/build with up to 3 fix iterations).
-  4. Confirmation gate summary prompt.
+  3. Verification loop (install, lint, build/tests with up to 3 fix iterations).
+  4. Confirmation gate summary prompt before any remote actions.
   5. Git init, GitHub repo creation, push, and deployment with live URL.
-- [ ] Phase 6 tests.
+  6. Transparent honest failure reporting.
+- [x] Phase 6 tests passing.
 
 ## Phase 7: Windows Setup Scripts & Documentation
 - [ ] `setup.ps1` automated environment and dependency installer.
