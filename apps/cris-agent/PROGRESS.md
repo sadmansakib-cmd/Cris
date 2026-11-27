@@ -59,4 +59,41 @@
 - [x] `.env.example` template.
 - [x] Detailed `README.md` with manual test checklist.
 - [x] Root `README.md` note.
-- [x] All 32 automated unit tests passing across 12 modules.
+
+## Cris v1.3: Hardening, Minimal HUD, Web Agent & Autonomous Workflows
+- [x] **Part 0: Local Server Hardening**
+  - Loopback-only binding (`127.0.0.1`, never `0.0.0.0`).
+  - Cryptographically secure per-launch ephemeral token (`secrets.token_urlsafe(32)`).
+  - Anti-DNS rebinding (`Host`) and anti-CSRF (`Origin`) header validation. Wildcard CORS blocked.
+  - Approval source authentication: approvals accepted ONLY from authenticated UI, voice, or CLI.
+  - `docs/SECURITY.md` and `tests/test_server_security.py` passing.
+- [x] **Part 1: HUD Minimalist Cleanup**
+  - Removed decorative text, version numbers, and filler strings.
+  - Subtitle capsule, single status indicator (`idle`/`listening`/`talking`/`working`), minimal input bar.
+  - Telemetry (CPU/RAM/battery/model) tucked behind toggleable flyout.
+  - Before/after screenshots saved to `docs/ui/before_cleanup.png` and `docs/ui/after_cleanup.png`.
+- [x] **Part 2: 11 Slide-Over Glass Module Panels**
+  - Slim icon dock on left side.
+  - 11 sliding glass panels: Tasks, Approvals, Web Agent, Notes, Files, Google, GitHub, Memory, Skills, Logs, Settings.
+  - Keyboard (`Esc`) and voice commands (*"Cris, open tasks"*) support.
+- [x] **Part 3: Autonomous Task Runner (OpenClaw-style)**
+  - Planner step generates ordered tool DAG using registered tools.
+  - Executor loop with hard limits (30 steps, 50 tool calls, 600s wall time, 3 identical failures stuck detection).
+  - Persistent SQLite queue: unfinished tasks restore safely as `paused` on restart, never auto-resumed.
+  - Workflow recipe engine supporting YAML recipes in `workflows/recipes/*.yaml`.
+- [x] **Part 4: Playwright Web Agent**
+  - Isolated profile in `data/browser_profile/` (headed default, headless toggle).
+  - Domain safety policy in `config/domains.yaml` (banking, localhost, private RFC-1918 IPs blocked).
+  - Form safety stops: blocks password, CVV, OTP, and passcode typing -> pauses for human takeover.
+  - CAPTCHA safety stops: pauses and asks user to solve challenge.
+  - Untrusted data delimiters `[UNTRUSTED_WEB_DATA]` applied to prevent prompt injection.
+- [x] **Part 5: Background Tasks & Extensibility**
+  - Background scheduler enforcing unattended read-only rule.
+  - Mutating tasks pushed to Approvals panel and trigger Windows desktop toast.
+  - Declarative skills in `skills/` and draft skills in `skills/pending/` with one-click review/approval.
+  - Remote control Telegram bot documented and disabled by default.
+- [x] **Part 6: Testing & Verification**
+  - 47 automated unit tests passing across 17 test modules in `tests/runner.py`.
+  - Code hygiene AST test verifying complete absence of `eval`, `exec`, `shell=True`, and `os.system`.
+  - Manual test checklist updated in `README.md`.
+

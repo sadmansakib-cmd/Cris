@@ -40,7 +40,12 @@ class AppConfig:
     # LLM Settings
     primary_provider: str = "gemini"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-flash-lite-latest"
+    
+    # Per-role model settings (default to gemini_model)
+    model_chat: str = "gemini-flash-lite-latest"
+    model_planner: str = "gemini-flash-lite-latest"
+    model_browser_agent: str = "gemini-flash-lite-latest"
     
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"

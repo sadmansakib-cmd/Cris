@@ -78,10 +78,9 @@ class EdgeTTSPlayer:
             # Run edge-tts asynchronously
             asyncio.run(self._synthesize_to_file(text, voice, mp3_path))
 
-            # Play audio using Windows Media Player or winsound/command
-            # Convert or play directly
-            cmd = f'powershell -NoProfile -Command "(New-Object Media.SoundPlayer \'{mp3_path}\').PlaySync()"'
-            res = os.system(f'start /min wmplayer "{mp3_path}"')
+            # Play audio using safe subprocess without shell=True or os.system
+            import subprocess
+            subprocess.run(["cmd.exe", "/c", "start", "/min", "wmplayer", mp3_path], check=False)
 
             # Clean up after brief delay in background thread
             def _cleanup():

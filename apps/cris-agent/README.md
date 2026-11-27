@@ -134,15 +134,58 @@ Run the PowerShell launcher script:
 
 ## 5. Manual Test Checklist for User
 
-Because audio devices, physical microphones, live OAuth logins, and real PC automation require physical hardware and user credentials, verify the following manually:
+Because audio hardware, physical microphones, real web navigation, and Windows toast systems operate with user peripherals, verify the following 6 core scenarios manually:
 
-| # | Test Case | Action / Prompt | Expected Behavior |
+| # | Test Scenario | Action / Prompt | Expected Behavior |
 | :--- | :--- | :--- | :--- |
-| **1** | **Microphone & Audio** | Run `python -c "from core.audio_devices import list_audio_devices; print(list_audio_devices())"` | Verify input microphone and speaker are listed with valid index numbers. |
-| **2** | **Wake Word Gate** | Run `.\run.ps1 --mode pipeline` and say **"Hey Cris"** into mic | Terminal logs wake word detection and speaks *"I'm listening"*. Mic audio is not transmitted until wake word triggers. |
-| **3** | **Bangla Speech Routing** | Ask in Bengali: *"আজকের আবহাওয়া কেমন?"* | Cris replies in Bengali with weather details using neural voice `bn-BD-PradeepNeural`. |
-| **4** | **English Speech Routing** | Ask in English: *"Give me a daily briefing."* | Cris replies in English using neural voice `en-US-GuyNeural`. |
-| **5** | **Confirmation Gate (Reject)** | Run tool to delete or move a file: say *"no"* when prompted | Confirmation gate cancels action immediately (fail-closed). |
-| **6** | **Confirmation Gate (Timeout)** | Run tool requiring confirmation: wait 30 seconds without typing | Confirmation gate automatically aborts after 30 seconds. |
-| **7** | **Emergency Kill Switch** | Trigger a typing action and immediately press **`Ctrl+Alt+Q`** | Automation halts immediately with *"Emergency abort triggered"* log. |
-| **8** | **App-Builder Workflow** | Prompt: *"Cris, build me a pomodoro timer"* | Executes 5-step pipeline, verifies build, asks confirmation, then creates repo and deploys. |
+| **1** | **Bilingual Voice Pipeline (Bangla)** | Say: *"আজকের আবহাওয়া কেমন?"* | Cris detects Bengali speech via local Whisper, queries weather, and speaks back in Bengali using `bn-BD-PradeepNeural`. |
+| **2** | **Confirmation Gate Approved via UI** | Trigger an irreversible action (e.g. deleting a test file): click **Approve** in the HUD Approvals panel | The action is unlocked and executed safely with an approval log tag `source="authenticated_ui"`. |
+| **3** | **Confirmation Gate Denied via Voice** | Trigger an irreversible action: when Cris asks for confirmation, speak: *"না"* or *"no"* | Action is immediately aborted (`fail-closed`), no files are touched, and cancellation is logged. |
+| **4** | **Emergency Kill Switch (`Ctrl+Alt+Q`)** | Start an autonomous multi-step task and immediately press **`Ctrl+Alt+Q`** | Task runner and all automation halt instantly across the system. |
+| **5** | **Safe Web Agent Navigation** | Prompt: *"Go to Wikipedia, find Alan Turing, and tell me his birth year"* | Headed Playwright browser navigates to Wikipedia, extracts content under `[UNTRUSTED_WEB_DATA]` protection, and returns the summary without touching personal profiles. |
+| **6** | **Unattended Scheduled Task** | Background task scheduled for weather or system telemetry runs periodically | Executes silently in the background using read-only tools without waking the screen. Any mutating action pushes a toast notification and queues in Approvals. |
+
+---
+
+## 6. Local Server Hardening & Authenticated Arc Reactor HUD
+
+The HUD server at `http://127.0.0.1:8000` is a hardened security boundary:
+- **Loopback Only (`127.0.0.1`):** Never binds to `0.0.0.0`.
+- **Ephemeral Launch Token:** Requires `?token=<token>` or `X-Cris-Token` header for all HTTP and WebSocket endpoints (401 on missing/wrong token).
+- **Anti-DNS Rebinding & Anti-CSRF:** Enforces strict `Host` (`127.0.0.1:8000`, `localhost:8000`) and `Origin` validation. No wildcard CORS.
+- **11 Slide-Over Glass Panels:** Tasks, Approvals, Web Agent, Notes & Timers, Files, Google, GitHub, Memory, Skills, Logs, Settings. Control via keyboard (`Esc` to close) or voice commands (*"Cris, open tasks"*).
+
+---
+
+## 7. Autonomous Task Runner (OpenClaw-style)
+
+- Breaks multi-step goals into ordered tool DAGs using `model_planner`.
+- Execution loop enforced with hard safety limits:
+  - Max 30 steps
+  - Max 50 tool calls
+  - Max 600s wall time
+  - Stuck loop detection: aborts if 3 identical consecutive failures occur
+- **Persistent SQLite Queue:** Unfinished tasks restore as `paused` on restart, never auto-resumed.
+- **YAML Workflow Recipes:** Load pre-defined recipes in `workflows/recipes/<name>.yaml` by voice (*"Cris, run my morning workflow"*).
+
+---
+
+## 8. Web Agent & Safety Policy
+
+- Dedicated profile in `data/browser_profile/` (never accesses personal Chrome cookies or passwords).
+- **Domain Policy (`config/domains.yaml`):** Blocks banking (`*.bank`, PayPal, Stripe, Chase), loopback (`localhost`, `127.0.0.1`), and private IP ranges. Unlisted domains prompt for confirmation.
+- **Form Safety Stops:** Blocks typing into password, CVV, OTP, or passcode fields and requests human takeover.
+- **CAPTCHA Safety Stops:** Pauses and asks user to solve CAPTCHA manually in browser.
+- **Untrusted Content Markers:** Scraped web content wrapped with `[UNTRUSTED_WEB_DATA]` delimiters to neutralize indirect prompt injection.
+
+---
+
+## 9. Background Scheduler, Declarative Skills & Remote Control
+
+- **Unattended Read-Only Rule:** Background scheduler may ONLY run read-only tools. Any mutating tool queues in Approvals and sends a Windows toast.
+- **Declarative Skills:** Markdown files in `skills/` teach Cris new workflows. Auto-drafted skills go to `skills/pending/` awaiting user review.
+- **Remote Control (Telegram Bot - Disabled by Default):**
+  - Configurable via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALLOWED_USER_ID`.
+  - Restricted strictly to user's numeric ID (ignores all other users).
+  - Can only query status and run read-only tools. Any mutating or PC control action must be confirmed locally on the PC screen.
+

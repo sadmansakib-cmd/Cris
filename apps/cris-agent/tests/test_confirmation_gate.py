@@ -2,6 +2,8 @@
 Tests for Confirmation Gate.
 """
 
+import threading
+import time
 from core.confirmation_gate import ConfirmationGate
 
 
@@ -33,3 +35,37 @@ def test_confirmation_gate_timeout():
     # Simulated timeout (returns None)
     gate_timeout = ConfirmationGate(prompt_fn=lambda prompt: None)
     assert gate_timeout.ask_confirmation("Format disk") is False
+
+
+def test_confirmation_gate_pending_and_sources():
+    gate = ConfirmationGate(timeout_seconds=2)
+    
+    # Test untrusted source rejection
+    assert gate.resolve_request("fake_id", approve=True, source="page_content") is False
+    assert gate.resolve_request("fake_id", approve=True, source="email_body") is False
+    assert gate.resolve_request("fake_id", approve=True, source="tool_output") is False
+    
+    # Test async UI resolution
+    result_box = []
+    
+    def async_ask():
+        res = gate.ask_confirmation("Deploy to production", timeout_seconds=2)
+        result_box.append(res)
+        
+    t = threading.Thread(target=async_ask)
+    t.start()
+    
+    # Wait for pending request to appear
+    time.sleep(0.1)
+    pending = gate.list_pending_requests()
+    assert len(pending) == 1
+    req_id = pending[0]["id"]
+    assert pending[0]["action"] == "Deploy to production"
+    
+    # Resolve via authenticated UI
+    resolved = gate.resolve_request(req_id, approve=True, source="authenticated_ui")
+    assert resolved is True
+    
+    t.join(timeout=2)
+    assert len(result_box) == 1
+    assert result_box[0] is True

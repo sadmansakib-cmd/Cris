@@ -1,0 +1,56 @@
+# Cris Web Agent Domain Policy
+# Defines safety boundaries for autonomous web navigation
+
+blocked_domains:
+  - "*.bank"
+  - "*.chase.com"
+  - "*.bankofamerica.com"
+  - "*.wellsfargo.com"
+  - "*.paypal.com"
+  - "*.stripe.com"
+  - "*.coinbase.com"
+  - "*.binance.com"
+  - "localhost"
+  - "127.0.0.1"
+  - "::1"
+  - "10.*"
+  - "192.168.*"
+  - "172.16.*"
+  - "172.17.*"
+  - "172.18.*"
+  - "172.19.*"
+  - "172.20.*"
+  - "172.21.*"
+  - "172.22.*"
+  - "172.23.*"
+  - "172.24.*"
+  - "172.25.*"
+  - "172.26.*"
+  - "172.27.*"
+  - "172.28.*"
+  - "172.29.*"
+  - "172.30.*"
+  - "172.31.*"
+
+blocked_schemes:
+  - "file"
+  - "chrome"
+  - "edge"
+  - "javascript"
+  - "data"
+
+allowlist_domains:
+  - "wikipedia.org"
+  - "*.wikipedia.org"
+  - "github.com"
+  - "*.github.io"
+  - "python.org"
+  - "docs.python.org"
+  - "open-meteo.com"
+  - "duckduckgo.com"
+  - "news.ycombinator.com"
+  - "reuters.com"
+  - "bbc.com"
+
+# Remembers user choices for unlisted domains: 'allow_once', 'allow_always', 'deny'
+user_decisions: {}

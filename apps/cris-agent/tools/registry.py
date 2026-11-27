@@ -87,6 +87,16 @@ class ToolRegistry:
     def get_tool(self, name: str) -> Optional[ToolDefinition]:
         return self.tools.get(name)
 
+    def get_tools(self) -> List[str]:
+        return list(self.tools.keys())
+
+    def get_tool_description(self, name: str) -> str:
+        tool = self.get_tool(name)
+        return tool.desc if tool else ""
+
+    def execute_tool(self, name: str, **kwargs) -> Dict[str, Any]:
+        return self.execute(name, kwargs)
+
     def get_all_declarations(self) -> List[Dict[str, Any]]:
         return [tool.to_gemini_declaration() for tool in self.tools.values()]
 

@@ -5,6 +5,7 @@ Provides safe, persistent SQLite storage for facts, notes, reminders, tasks, and
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import datetime
 from pathlib import Path
@@ -112,6 +113,26 @@ class SQLiteStore:
                     content TEXT NOT NULL,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+            """)
+
+            # Autonomous Task Runner Queue (Part 3)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS tasks_queue (
+                    id TEXT PRIMARY KEY,
+                    goal TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'queued',
+                    steps_json TEXT NOT NULL DEFAULT '[]',
+                    current_step INTEGER NOT NULL DEFAULT 0,
+                    logs_json TEXT NOT NULL DEFAULT '[]',
+                    error_message TEXT DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            # Hardening: On startup/restart, unfinished tasks MUST come back as 'paused', never auto-resumed
+            cursor.execute("""
+                UPDATE tasks_queue SET status = 'paused' 
+                WHERE status IN ('running', 'queued');
             """)
 
     # ---------------- Facts ----------------
@@ -248,3 +269,81 @@ class SQLiteStore:
             )
             rows = cur.fetchall()
             return [dict(row) for row in reversed(rows)]
+
+    # ---------------- Autonomous Task Runner Queue ----------------
+    def create_queue_task(self, task_id: str, goal: str, steps: list) -> str:
+        now = datetime.datetime.utcnow().isoformat()
+        with self._get_connection() as conn:
+            conn.cursor().execute("""
+                INSERT INTO tasks_queue (id, goal, status, steps_json, current_step, logs_json, created_at, updated_at)
+                VALUES (?, ?, 'queued', ?, 0, '[]', ?, ?)
+            """, (task_id, goal, json.dumps(steps), now, now))
+            return task_id
+
+    def get_queue_task(self, task_id: str) -> Optional[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            cur = conn.cursor().execute("SELECT * FROM tasks_queue WHERE id = ?", (task_id,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            data = dict(row)
+            data["steps"] = json.loads(data["steps_json"])
+            data["logs"] = json.loads(data["logs_json"])
+            return data
+
+    def list_queue_tasks(self, limit: int = 30) -> List[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            cur = conn.cursor().execute("SELECT * FROM tasks_queue ORDER BY created_at DESC LIMIT ?", (limit,))
+            rows = cur.fetchall()
+            result = []
+            for r in rows:
+                item = dict(r)
+                item["steps"] = json.loads(item["steps_json"])
+                item["logs"] = json.loads(item["logs_json"])
+                result.append(item)
+            return result
+
+    def update_queue_task(
+        self,
+        task_id: str,
+        status: Optional[str] = None,
+        current_step: Optional[int] = None,
+        error_message: Optional[str] = None,
+        steps: Optional[list] = None
+    ) -> bool:
+        now = datetime.datetime.utcnow().isoformat()
+        fields = ["updated_at = ?"]
+        params: list[Any] = [now]
+        if status is not None:
+            fields.append("status = ?")
+            params.append(status)
+        if current_step is not None:
+            fields.append("current_step = ?")
+            params.append(current_step)
+        if error_message is not None:
+            fields.append("error_message = ?")
+            params.append(error_message)
+        if steps is not None:
+            fields.append("steps_json = ?")
+            params.append(json.dumps(steps))
+        params.append(task_id)
+        sql = f"UPDATE tasks_queue SET {', '.join(fields)} WHERE id = ?"
+        with self._get_connection() as conn:
+            cur = conn.cursor().execute(sql, tuple(params))
+            return cur.rowcount > 0
+
+    def append_queue_log(self, task_id: str, log_message: str) -> bool:
+        task = self.get_queue_task(task_id)
+        if not task:
+            return False
+        logs = task["logs"]
+        timestamp = datetime.datetime.utcnow().strftime("%H:%M:%S")
+        logs.append(f"[{timestamp}] {log_message}")
+        now = datetime.datetime.utcnow().isoformat()
+        with self._get_connection() as conn:
+            cur = conn.cursor().execute(
+                "UPDATE tasks_queue SET logs_json = ?, updated_at = ? WHERE id = ?",
+                (json.dumps(logs), now, task_id)
+            )
+            return cur.rowcount > 0
+

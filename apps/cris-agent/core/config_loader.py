@@ -93,11 +93,19 @@ def load_config(env_file: Path | str | None = None) -> AppConfig:
     chain_raw = os.getenv("PROVIDER_FALLBACK_CHAIN", "gemini,groq,ollama")
     chain = [c.strip().lower() for c in chain_raw.split(",") if c.strip()]
 
+    default_model = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+    model_chat = os.getenv("MODEL_CHAT", default_model)
+    model_planner = os.getenv("MODEL_PLANNER", default_model)
+    model_browser_agent = os.getenv("MODEL_BROWSER_AGENT", default_model)
+
     return AppConfig(
         mode=os.getenv("CRIS_MODE", "pipeline").lower(),
         primary_provider=os.getenv("PRIMARY_PROVIDER", "gemini").lower(),
         gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
-        gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+        gemini_model=default_model,
+        model_chat=model_chat,
+        model_planner=model_planner,
+        model_browser_agent=model_browser_agent,
         groq_api_key=os.getenv("GROQ_API_KEY", ""),
         groq_model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),

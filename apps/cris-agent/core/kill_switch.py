@@ -33,6 +33,10 @@ class KillSwitch:
     def is_aborted(self) -> bool:
         return self._aborted.is_set()
 
+    def is_triggered(self) -> bool:
+        """Alias for is_aborted."""
+        return self._aborted.is_set()
+
     def trigger(self) -> None:
         """Trigger emergency abort immediately."""
         logger.warning(f"[KILL SWITCH] Emergency abort triggered via {self.hotkey}!")

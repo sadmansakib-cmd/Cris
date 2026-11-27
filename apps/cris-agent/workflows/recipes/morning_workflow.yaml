@@ -1,0 +1,22 @@
+# Morning Briefing Workflow Recipe
+name: "morning_workflow"
+description: "Checks daily weather, unread emails, and summarizes calendar schedule."
+
+steps:
+  - step: 1
+    tool: "weather"
+    params:
+      city: "Dhaka"
+    description: "Get today's local weather"
+
+  - step: 2
+    tool: "daily_briefing"
+    params: {}
+    description: "Fetch pending reminders and top priorities"
+
+  - step: 3
+    tool: "gmail"
+    params:
+      action: "read"
+      max_results: 5
+    description: "Check recent unread inbox messages"
