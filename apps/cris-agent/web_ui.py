@@ -1,11 +1,13 @@
 """
-Cris Agent - Holographic Arc Reactor Web Dashboard & Voice Interface (v1.3 Hardened)
+Cris Agent - Holographic Arc Reactor Web Dashboard & Voice Interface (v1.4 Integrated Workspace)
 - Local Server Hardening: Bound strictly to 127.0.0.1, per-launch random token authentication,
   Host/Origin anti-DNS rebinding and anti-CSRF protection, no wildcard CORS.
-- Minimal UI: No decorative text, single status indicator, subtitle capsule, telemetry behind toggle.
-- 11 Slide-over Glass Panels: Tasks, Approvals, Web Agent, Productivity, Files, Google,
-  GitHub, Memory, Skills, Logs, Settings.
-- Voice & Keyboard controllable ("Cris, open tasks", Esc to close).
+- Minimal HUD: Single status indicator, subtitle capsule, telemetry behind toggle flyout.
+- Integrated Web Workspace Sidebar: Hideable, resizable browser container embedding web apps
+  (e.g. Quest Clock Rank Up on port 5174, Google, web tools, live Quest HUD).
+- Voice & Keyboard controllable ("Cris, open sidebar", "Cris, assign a new task: Running, level 3",
+  "Cris, task done", "Cris, download a picture of...", "Cris, delete file...").
+- Full Quest Gamification: Levels 1-5, XP rewards, rank up progression (E-Rank to S-Rank Monarch).
 """
 
 from __future__ import annotations
@@ -31,7 +33,7 @@ from core.personality import detect_language, get_system_prompt
 from core.scheduler import BackgroundScheduler
 from core.task_runner import TaskRunner
 from memory.sqlite_store import SQLiteStore
-from tools import system_status
+from tools import image_downloader, quest_tool, system_status
 from tools.registry import ToolRegistry
 
 logger = logging.getLogger("cris.web_ui")
@@ -94,7 +96,7 @@ HTML_PAGE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRIS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #030407;
@@ -105,6 +107,7 @@ HTML_PAGE = """<!DOCTYPE html>
       --red: #ef4444;
       --green: #10b981;
       --blue: #3b82f6;
+      --purple: #8b5cf6;
       --font-mono: 'JetBrains Mono', monospace;
       --font-sans: 'Inter', sans-serif;
     }
@@ -122,7 +125,6 @@ HTML_PAGE = """<!DOCTYPE html>
       position: relative;
     }
 
-    /* Ambient Background Radial Vignette */
     .bg-vignette {
       position: absolute;
       inset: 0;
@@ -131,18 +133,17 @@ HTML_PAGE = """<!DOCTYPE html>
       z-index: 1;
     }
 
-    /* Sci-Fi HUD Corner Brackets */
     .hud-frame {
       position: absolute;
       inset: 16px;
       pointer-events: none;
       z-index: 10;
-      border: 1px solid rgba(255, 158, 31, 0.12);
+      border: 1px solid rgba(255, 158, 31, 0.14);
     }
     .hud-corner {
       position: absolute;
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       border-color: var(--gold);
       border-style: solid;
     }
@@ -151,7 +152,68 @@ HTML_PAGE = """<!DOCTYPE html>
     .bottom-left { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
     .bottom-right { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
 
-    /* Top Status Bar: Minimal Indicator + Telemetry Toggle */
+    /* Top HUD telemetry bar matching the reference image */
+    .hud-top-telemetry {
+      position: absolute;
+      top: 6px;
+      left: 120px;
+      right: 120px;
+      height: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      pointer-events: none;
+    }
+    .hud-top-line {
+      width: 140px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 158, 31, 0.5));
+    }
+    .hud-top-box {
+      width: 28px;
+      height: 7px;
+      background: rgba(255, 158, 31, 0.4);
+      border: 1px solid var(--gold);
+    }
+    .hud-top-dots {
+      display: flex;
+      gap: 3px;
+    }
+    .hud-top-dots span {
+      width: 4px;
+      height: 4px;
+      background: var(--gold-bright);
+      display: inline-block;
+    }
+    .hud-left-bracket {
+      position: absolute;
+      top: 110px;
+      left: 0;
+      width: 130px;
+      height: 1px;
+      background: rgba(255, 158, 31, 0.35);
+      pointer-events: none;
+    }
+    .hud-left-bracket::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1px;
+      height: 90px;
+      background: rgba(255, 158, 31, 0.35);
+    }
+    .hud-bottom-compass {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 58px;
+      height: 58px;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
     header {
       width: 100%;
       padding: 1.25rem 2rem;
@@ -206,6 +268,11 @@ HTML_PAGE = """<!DOCTYPE html>
       border-color: var(--gold);
       box-shadow: 0 0 10px var(--gold-glow);
     }
+    .icon-btn.active {
+      background: var(--gold);
+      color: #000;
+      box-shadow: 0 0 14px var(--gold);
+    }
     .badge {
       position: absolute;
       top: -4px;
@@ -218,7 +285,6 @@ HTML_PAGE = """<!DOCTYPE html>
       font-weight: 700;
     }
 
-    /* Telemetry Flyout */
     .telemetry-flyout {
       position: absolute;
       top: 4.5rem;
@@ -239,11 +305,10 @@ HTML_PAGE = """<!DOCTYPE html>
     .stat-row { display: flex; justify-content: space-between; gap: 2rem; }
     .stat-val { color: var(--gold-bright); font-weight: 600; }
 
-    /* Center Stage: Arc Reactor */
     .core-container {
       position: relative;
-      width: min(65vh, 520px);
-      height: min(65vh, 520px);
+      width: min(72vh, 580px);
+      height: min(72vh, 580px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -257,11 +322,11 @@ HTML_PAGE = """<!DOCTYPE html>
       pointer-events: none;
     }
     .core-center-btn {
-      width: 130px;
-      height: 130px;
+      width: 88px;
+      height: 88px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 174, 43, 0.2) 0%, rgba(255, 115, 0, 0.04) 70%, transparent 100%);
-      border: 1px dashed rgba(255, 158, 31, 0.4);
+      background: radial-gradient(circle, rgba(255, 230, 160, 0.12) 0%, rgba(255, 140, 20, 0.04) 60%, transparent 100%);
+      border: 1px dashed rgba(255, 185, 45, 0.45);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -269,19 +334,23 @@ HTML_PAGE = """<!DOCTYPE html>
       cursor: pointer;
       z-index: 10;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(2px);
     }
     .core-center-btn:hover {
-      transform: scale(1.05);
-      border-color: var(--gold);
-      box-shadow: 0 0 25px var(--gold-glow);
+      transform: scale(1.08);
+      border-color: var(--gold-bright);
+      box-shadow: 0 0 35px var(--gold-glow);
     }
     .center-glyph {
-      font-size: 2.2rem;
+      font-size: 1.8rem;
       color: var(--gold-bright);
-      text-shadow: 0 0 15px var(--gold);
+      text-shadow: 0 0 16px var(--gold);
+      transition: transform 0.3s;
+    }
+    .core-center-btn:hover .center-glyph {
+      transform: rotate(45deg);
     }
 
-    /* Subtitle Capsule */
     .subtitle-capsule {
       position: absolute;
       bottom: 6.5rem;
@@ -307,7 +376,7 @@ HTML_PAGE = """<!DOCTYPE html>
       transform: translateY(0);
     }
 
-    /* Slim Left Icon Dock */
+    /* Left Icon Dock */
     .icon-dock {
       position: absolute;
       left: 1.5rem;
@@ -416,13 +485,13 @@ HTML_PAGE = """<!DOCTYPE html>
       background: var(--gold-bright);
     }
 
-    /* Slide-Over Glass Module Panels */
+    /* Left Slide-Over Glass Module Panels */
     .module-panel {
       position: absolute;
       top: 2rem;
       bottom: 2rem;
       left: 5.5rem;
-      width: min(600px, calc(100vw - 7rem));
+      width: min(580px, calc(100vw - 7rem));
       background: rgba(10, 15, 25, 0.94);
       backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 158, 31, 0.3);
@@ -505,6 +574,181 @@ HTML_PAGE = """<!DOCTYPE html>
       background: var(--red);
       color: #fff;
     }
+
+    /* RIGHT SLIDE-OUT INTEGRATED WEB WORKSPACE SIDEBAR */
+    .sidebar-panel {
+      position: absolute;
+      top: 1rem;
+      bottom: 1rem;
+      right: 1rem;
+      width: min(720px, calc(100vw - 3rem));
+      background: rgba(8, 12, 20, 0.96);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 158, 31, 0.35);
+      border-radius: 16px;
+      z-index: 45;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(120%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9);
+      overflow: hidden;
+    }
+    .sidebar-panel.open {
+      transform: translateX(0);
+    }
+    .sidebar-header {
+      padding: 0.8rem 1.2rem;
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid rgba(255, 158, 31, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .sidebar-tabs {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .side-tab {
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 158, 31, 0.2);
+      background: rgba(255, 158, 31, 0.08);
+      color: #cbd5e1;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .side-tab:hover, .side-tab.active {
+      background: rgba(255, 158, 31, 0.25);
+      border-color: var(--gold);
+      color: var(--gold-bright);
+    }
+    .sidebar-address-bar {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .sidebar-url-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 158, 31, 0.2);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    .sidebar-url-input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+    .sidebar-action-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 158, 31, 0.2);
+      background: rgba(255, 158, 31, 0.1);
+      color: var(--gold-bright);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .sidebar-action-btn:hover {
+      background: var(--gold);
+      color: #000;
+    }
+    .sidebar-action-btn.close-btn {
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    .sidebar-action-btn.close-btn:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+    .sidebar-content {
+      flex: 1;
+      position: relative;
+      background: #020617;
+      overflow: hidden;
+    }
+    iframe#sidebar-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #0b0f19;
+    }
+
+    /* Live Quests HUD Widget inside Sidebar */
+    .quest-hud-view {
+      position: absolute;
+      inset: 0;
+      padding: 1.25rem;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+      background: #030712;
+      font-family: var(--font-sans);
+    }
+    .quest-hud-view.active {
+      display: flex;
+    }
+    .quest-rank-card {
+      background: linear-gradient(135deg, rgba(255,158,31,0.15) 0%, rgba(139,92,246,0.15) 100%);
+      border: 1px solid rgba(255, 158, 31, 0.4);
+      border-radius: 12px;
+      padding: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .rank-badge {
+      background: var(--gold);
+      color: #000;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+    .quest-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 158, 31, 0.15);
+      border-radius: 10px;
+      padding: 0.9rem 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .quest-item.done {
+      opacity: 0.55;
+      text-decoration: line-through;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .quest-checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid var(--gold);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .quest-checkbox.checked {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -515,6 +759,15 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="hud-corner top-right"></div>
     <div class="hud-corner bottom-left"></div>
     <div class="hud-corner bottom-right"></div>
+    <div class="hud-top-telemetry">
+      <div class="hud-top-line"></div>
+      <div class="hud-top-box"></div>
+      <div class="hud-top-dots"><span></span><span></span></div>
+    </div>
+    <div class="hud-left-bracket"></div>
+    <div class="hud-bottom-compass">
+      <canvas id="compass-canvas" width="58" height="58"></canvas>
+    </div>
   </div>
 
   <header>
@@ -524,6 +777,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
     <div class="top-actions">
+      <button class="icon-btn" id="sidebar-toggle-btn" title="Toggle Integrated Workspace (Ctrl+B)">🌐</button>
       <button class="icon-btn" id="telemetry-btn" title="System Telemetry">⚡</button>
       <button class="icon-btn" id="kill-btn" title="Emergency Stop (Ctrl+Alt+Q)" style="border-color: rgba(239,68,68,0.4); color: #ef4444;">🛑</button>
     </div>
@@ -537,7 +791,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="stat-row"><span>Model</span><span class="stat-val" id="stat-model">--</span></div>
   </div>
 
-  <!-- Slim Left Icon Dock -->
+  <!-- Left Icon Dock -->
   <div class="icon-dock">
     <button class="dock-btn" data-panel="tasks" title="Tasks">📋</button>
     <button class="dock-btn" data-panel="approvals" title="Approvals">
@@ -555,13 +809,53 @@ HTML_PAGE = """<!DOCTYPE html>
     <button class="dock-btn" data-panel="settings" title="Settings">⚙️</button>
   </div>
 
-  <!-- Slide-Over Glass Module Panels -->
+  <!-- Left Slide-Over Glass Module Panels -->
   <div class="module-panel" id="module-panel">
     <div class="panel-header">
       <div class="panel-title" id="panel-title">Panel</div>
       <button class="panel-close" id="panel-close">✕</button>
     </div>
     <div class="panel-body" id="panel-body"></div>
+  </div>
+
+  <!-- RIGHT SLIDE-OUT INTEGRATED WEB WORKSPACE SIDEBAR -->
+  <div class="sidebar-panel" id="sidebar-panel">
+    <div class="sidebar-header">
+      <div class="sidebar-tabs">
+        <button class="side-tab active" id="tab-quest" data-url="http://localhost:5174/">⚔️ Questlog App</button>
+        <button class="side-tab" id="tab-hud">📜 Quests HUD</button>
+        <button class="side-tab" id="tab-google" data-url="https://duckduckgo.com">🔍 Web Search</button>
+      </div>
+      <div class="sidebar-address-bar">
+        <input type="text" class="sidebar-url-input" id="sidebar-url-input" value="http://localhost:5174/">
+        <button class="sidebar-action-btn" id="sidebar-go-btn" title="Navigate">➔</button>
+        <button class="sidebar-action-btn" id="sidebar-reload-btn" title="Reload">↻</button>
+        <button class="sidebar-action-btn" id="sidebar-popout-btn" title="Open in New Tab">↗</button>
+        <button class="sidebar-action-btn close-btn" id="sidebar-close-btn" title="Close Sidebar">✕</button>
+      </div>
+    </div>
+    <div class="sidebar-content">
+      <iframe id="sidebar-iframe" src="http://localhost:5174/"></iframe>
+      <div class="quest-hud-view" id="quest-hud-view">
+        <div class="quest-rank-card">
+          <div>
+            <h3 style="color:#fff;font-size:1.1rem;font-weight:700;">Quest Clock Rank Up</h3>
+            <p style="color:#94a3b8;font-size:0.8rem;margin-top:2px;">Gamified task tracker synced with Cris</p>
+          </div>
+          <div style="text-align:right;">
+            <div class="rank-badge" id="player-rank-badge">E-Rank Novice</div>
+            <p style="font-size:0.8rem;color:var(--gold-bright);margin-top:4px;" id="player-xp-label">0 XP</p>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h4 style="color:#cbd5e1;font-size:0.9rem;">Active Quests</h4>
+          <button class="panel-btn" id="new-quest-modal-btn">+ Assign Quest</button>
+        </div>
+
+        <div id="quest-items-list" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Center Stage: Arc Reactor Canvas -->
@@ -578,24 +872,85 @@ HTML_PAGE = """<!DOCTYPE html>
   <!-- Input Bar -->
   <footer>
     <div class="input-bar">
-      <input type="text" id="chat-input" placeholder="Ask Cris..." autocomplete="off">
+      <input type="text" id="chat-input" placeholder="Ask Cris (or 'Cris, assign a new task...', 'download picture...')" autocomplete="off">
       <button class="send-btn" id="send-btn">➔</button>
     </div>
   </footer>
 
   <script>
-    // Embedded launch token for authenticated communication
     const CRIS_TOKEN = "__CRIS_TOKEN_PLACEHOLDER__";
 
     let currentState = "idle";
-    let isBeatActive = false;
     let rotationAngle = 0;
-    let rotationSpeed = 0.005;
+    let currentSpeed = 0.005;
+    let targetSpeed = 0.005;
     let pulseScale = 1.0;
-    let animId = null;
+
+    // Cosmic Ember Particle Field (160 particles swirling in 3D orbit)
+    const PARTICLE_COUNT = 160;
+    const particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        rFactor: 0.08 + Math.pow(Math.random(), 1.5) * 0.38,
+        angle: Math.random() * Math.PI * 2,
+        speed: (0.003 + Math.random() * 0.007),
+        size: 0.7 + Math.random() * 1.8,
+        alpha: 0.2 + Math.random() * 0.7,
+        eccentricity: 0.92 + (Math.random() - 0.5) * 0.12
+      });
+    }
 
     const canvas = document.getElementById("arc-canvas");
     const ctx = canvas.getContext("2d");
+    const compassCanvas = document.getElementById("compass-canvas");
+    const compassCtx = compassCanvas ? compassCanvas.getContext("2d") : null;
+    let compassAngle = 0;
+
+    function drawCompass() {
+      if (!compassCtx) return;
+      const cw = compassCanvas.width;
+      const ch = compassCanvas.height;
+      const cx = cw / 2;
+      const cy = ch / 2;
+      compassCtx.clearRect(0, 0, cw, ch);
+      compassAngle += 0.008;
+
+      compassCtx.save();
+      compassCtx.translate(cx, cy);
+
+      // Outer dial ring
+      compassCtx.strokeStyle = "rgba(255, 158, 31, 0.45)";
+      compassCtx.lineWidth = 1;
+      compassCtx.beginPath();
+      compassCtx.arc(0, 0, cx * 0.88, 0, Math.PI * 2);
+      compassCtx.stroke();
+
+      // Rotating tick marks
+      compassCtx.rotate(compassAngle);
+      for (let i = 0; i < 12; i++) {
+        const rad = (i * Math.PI * 2) / 12;
+        const r1 = cx * (i % 3 === 0 ? 0.65 : 0.76);
+        const r2 = cx * 0.85;
+        compassCtx.strokeStyle = (i % 3 === 0) ? "#ffbe4a" : "rgba(255, 158, 31, 0.35)";
+        compassCtx.lineWidth = (i % 3 === 0) ? 1.5 : 1;
+        compassCtx.beginPath();
+        compassCtx.moveTo(Math.cos(rad) * r1, Math.sin(rad) * r1);
+        compassCtx.lineTo(Math.cos(rad) * r2, Math.sin(rad) * r2);
+        compassCtx.stroke();
+      }
+
+      // Center crosshair
+      compassCtx.strokeStyle = "rgba(255, 190, 74, 0.65)";
+      compassCtx.beginPath();
+      compassCtx.moveTo(-cx * 0.28, 0);
+      compassCtx.lineTo(cx * 0.28, 0);
+      compassCtx.moveTo(0, -cy * 0.28);
+      compassCtx.lineTo(0, cy * 0.28);
+      compassCtx.stroke();
+
+      compassCtx.restore();
+    }
+
     const statusDot = document.getElementById("status-dot");
     const statusLabel = document.getElementById("status-label");
     const subtitle = document.getElementById("subtitle");
@@ -610,6 +965,24 @@ HTML_PAGE = """<!DOCTYPE html>
     const panelBody = document.getElementById("panel-body");
     const panelClose = document.getElementById("panel-close");
     const approvalsBadge = document.getElementById("approvals-badge");
+
+    // Sidebar DOM
+    const sidebarPanel = document.getElementById("sidebar-panel");
+    const sidebarToggleBtn = document.getElementById("sidebar-toggle-btn");
+    const sidebarCloseBtn = document.getElementById("sidebar-close-btn");
+    const sidebarUrlInput = document.getElementById("sidebar-url-input");
+    const sidebarGoBtn = document.getElementById("sidebar-go-btn");
+    const sidebarReloadBtn = document.getElementById("sidebar-reload-btn");
+    const sidebarPopoutBtn = document.getElementById("sidebar-popout-btn");
+    const sidebarIframe = document.getElementById("sidebar-iframe");
+    const tabQuest = document.getElementById("tab-quest");
+    const tabHud = document.getElementById("tab-hud");
+    const tabGoogle = document.getElementById("tab-google");
+    const questHudView = document.getElementById("quest-hud-view");
+    const questItemsList = document.getElementById("quest-items-list");
+    const playerRankBadge = document.getElementById("player-rank-badge");
+    const playerXpLabel = document.getElementById("player-xp-label");
+    const newQuestModalBtn = document.getElementById("new-quest-modal-btn");
 
     function resizeCanvas() {
       const rect = canvas.getBoundingClientRect();
@@ -626,11 +999,13 @@ HTML_PAGE = """<!DOCTYPE html>
       statusDot.className = "status-dot " + (newState === "idle" ? "" : newState);
       statusLabel.textContent = newState;
       if (newState === "listening") {
-        rotationSpeed = 0.0005;
+        targetSpeed = 0.0003; // Smoothly stabilizes into steady lock when voice is heard
       } else if (newState === "talking") {
-        rotationSpeed = 0.015;
+        targetSpeed = 0.012;  // Rhythmic beat pulse with energy shockwaves
+      } else if (newState === "working") {
+        targetSpeed = 0.022;  // High energy scanning
       } else {
-        rotationSpeed = 0.005;
+        targetSpeed = 0.005;  // Default smooth rotation
       }
     }
 
@@ -639,7 +1014,6 @@ HTML_PAGE = """<!DOCTYPE html>
       subtitle.classList.add("visible");
     }
 
-    // Canvas Arc Reactor Rendering
     function drawArcReactor() {
       const w = canvas.getBoundingClientRect().width;
       const h = canvas.getBoundingClientRect().height;
@@ -647,9 +1021,15 @@ HTML_PAGE = """<!DOCTYPE html>
       const cy = h / 2;
       ctx.clearRect(0, 0, w, h);
 
-      rotationAngle += rotationSpeed;
+      // Smooth deceleration / acceleration
+      currentSpeed += (targetSpeed - currentSpeed) * 0.05;
+      rotationAngle += currentSpeed;
+
+      // Audio beat scale pulse when talking
       if (currentState === "talking") {
-        pulseScale = 1.0 + Math.sin(Date.now() * 0.012) * 0.06;
+        const beat1 = Math.sin(Date.now() * 0.016);
+        const beat2 = Math.sin(Date.now() * 0.032 + 0.4);
+        pulseScale = 1.0 + Math.max(0, beat1) * 0.09 + Math.max(0, beat2) * 0.05;
       } else {
         pulseScale = 1.0;
       }
@@ -658,49 +1038,166 @@ HTML_PAGE = """<!DOCTYPE html>
       ctx.translate(cx, cy);
       ctx.scale(pulseScale, pulseScale);
 
-      // Outer segmented ring
+      // 1. Core Background Ambient Glow
+      const bgGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, w * 0.46);
+      bgGrad.addColorStop(0, "rgba(255, 170, 30, 0.22)");
+      bgGrad.addColorStop(0.3, "rgba(255, 110, 0, 0.08)");
+      bgGrad.addColorStop(0.65, "rgba(255, 60, 0, 0.02)");
+      bgGrad.addColorStop(1, "rgba(3, 4, 7, 0)");
+      ctx.fillStyle = bgGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, w * 0.46, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Audio Shockwave Ripples (Expanding outward when talking)
+      if (currentState === "talking") {
+        for (let wave = 0; wave < 3; wave++) {
+          const wavePhase = ((Date.now() * 0.12 + wave * 90) % (w * 0.42));
+          const waveAlpha = Math.max(0, 0.5 * (1 - wavePhase / (w * 0.42)));
+          ctx.strokeStyle = `rgba(255, 195, 65, ${waveAlpha})`;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, wavePhase, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      // 3. Galactic Fiery Plasma Whirlpool Filaments (6 logarithmic spiral arms matching reference image)
+      for (let arm = 0; arm < 6; arm++) {
+        const armAngle = (arm * Math.PI * 2) / 6;
+        ctx.beginPath();
+        for (let t = 0; t <= 1.0; t += 0.03) {
+          const r = (w * 0.22) * Math.pow(t, 1.25);
+          const theta = armAngle + (rotationAngle * 2.2) + (t * 3.6);
+          const x = Math.cos(theta) * r;
+          const y = Math.sin(theta) * r;
+          if (t === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        const armAlpha = 0.35 + 0.3 * Math.sin(Date.now() * 0.004 + arm);
+        ctx.strokeStyle = `rgba(255, 175, 40, ${armAlpha})`;
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+      }
+
+      // 4. White-Hot Central Singularity Nucleus
+      const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, w * 0.12);
+      coreGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+      coreGrad.addColorStop(0.2, "rgba(255, 225, 120, 0.85)");
+      coreGrad.addColorStop(0.5, "rgba(255, 140, 20, 0.45)");
+      coreGrad.addColorStop(0.8, "rgba(255, 80, 0, 0.15)");
+      coreGrad.addColorStop(1, "rgba(3, 4, 7, 0)");
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, w * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Multi-Layer Concentric Orbiting Rings
+      // Layer 1: Inner Fast Filament Arc
       ctx.save();
-      ctx.rotate(rotationAngle);
-      ctx.strokeStyle = "rgba(255, 158, 31, 0.45)";
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([14, 8, 30, 8]);
+      ctx.rotate(rotationAngle * 1.6);
+      ctx.strokeStyle = "rgba(255, 205, 75, 0.7)";
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([28, 10, 8, 10]);
       ctx.beginPath();
-      ctx.arc(0, 0, w * 0.44, 0, Math.PI * 2);
+      ctx.arc(0, 0, w * 0.18, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
 
-      // Middle counter-rotating ring
-      ctx.rotate(-rotationAngle * 1.8);
-      ctx.strokeStyle = "rgba(255, 190, 74, 0.55)";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([40, 15, 8, 15]);
+      // Layer 2: Counter-Rotating Technical Track
+      ctx.save();
+      ctx.rotate(-rotationAngle * 2.0);
+      ctx.strokeStyle = "rgba(255, 160, 30, 0.65)";
+      ctx.lineWidth = 2.0;
+      ctx.setLineDash([42, 14, 12, 14]);
       ctx.beginPath();
-      ctx.arc(0, 0, w * 0.36, 0, Math.PI * 2);
+      ctx.arc(0, 0, w * 0.24, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
 
-      // Inner reactor tick marks
-      const ticks = 24;
+      // Layer 3: Planetary Ring Disc (Concentric Micro-Grooves & Radar Ticks)
+      ctx.save();
+      ctx.rotate(rotationAngle * 0.7);
+      // Fine concentric orbital grooves
+      for (let g = 0; g < 7; g++) {
+        const gr = w * (0.28 + g * 0.015);
+        ctx.strokeStyle = `rgba(255, 175, 35, ${0.15 + (g % 2) * 0.12})`;
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash(g % 2 === 0 ? [80, 16] : [40, 12, 10, 12]);
+        ctx.beginPath();
+        ctx.arc(0, 0, gr, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // 48 Radial Calibration Ticks
+      const ticks = 48;
       for (let i = 0; i < ticks; i++) {
         const rad = (i * Math.PI * 2) / ticks;
-        const x1 = Math.cos(rad) * (w * 0.28);
-        const y1 = Math.sin(rad) * (w * 0.28);
-        const x2 = Math.cos(rad) * (w * 0.32);
-        const y2 = Math.sin(rad) * (w * 0.32);
-        ctx.strokeStyle = (i % 4 === 0) ? "#ffbe4a" : "rgba(255, 158, 31, 0.3)";
-        ctx.lineWidth = (i % 4 === 0) ? 2 : 1;
+        const isMajor = (i % 4 === 0);
+        const r1 = w * (isMajor ? 0.30 : 0.32);
+        const r2 = w * 0.35;
+        ctx.strokeStyle = isMajor ? "rgba(255, 200, 75, 0.75)" : "rgba(255, 150, 25, 0.3)";
+        ctx.lineWidth = isMajor ? 1.6 : 0.9;
         ctx.setLineDash([]);
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
+        ctx.moveTo(Math.cos(rad) * r1, Math.sin(rad) * r1);
+        ctx.lineTo(Math.cos(rad) * r2, Math.sin(rad) * r2);
         ctx.stroke();
       }
       ctx.restore();
 
+      // Layer 4: Outer Containment Caliper Brackets
+      ctx.save();
+      ctx.rotate(-rotationAngle * 0.9);
+      ctx.strokeStyle = "rgba(255, 185, 45, 0.55)";
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([55, 18, 12, 18]);
+      ctx.beginPath();
+      ctx.arc(0, 0, w * 0.41, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Equidistant Reticle Nodes
+      for (let n = 0; n < 6; n++) {
+        const nrad = (n * Math.PI * 2) / 6;
+        const nx = Math.cos(nrad) * (w * 0.41);
+        const ny = Math.sin(nrad) * (w * 0.41);
+        ctx.fillStyle = "#ffbe4a";
+        ctx.beginPath();
+        ctx.arc(nx, ny, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
-      animId = requestAnimationFrame(drawArcReactor);
+
+      // Layer 5: Outermost Horizon Radar Boundary
+      ctx.strokeStyle = "rgba(255, 140, 20, 0.3)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 11]);
+      ctx.beginPath();
+      ctx.arc(0, 0, w * 0.45, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 6. Cosmic Stardust Ember Particles Field
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.angle += p.speed * (currentSpeed / 0.005);
+        const pr = p.rFactor * w;
+        const px = Math.cos(p.angle) * pr;
+        const py = Math.sin(p.angle) * pr * p.eccentricity;
+        ctx.fillStyle = `rgba(255, 195, 75, ${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Draw corner compass reticle
+      drawCompass();
+
+      requestAnimationFrame(drawArcReactor);
     }
     drawArcReactor();
 
-    // Authenticated API Helper
     async function apiFetch(url, options = {}) {
       options.headers = options.headers || {};
       options.headers["X-Cris-Token"] = CRIS_TOKEN;
@@ -708,11 +1205,7 @@ HTML_PAGE = """<!DOCTYPE html>
         options.headers["Content-Type"] = "application/json";
         options.body = JSON.stringify(options.body);
       }
-      const res = await fetch(url, options);
-      if (res.status === 401) {
-        showSubtitle("Unauthorized: Invalid session token.");
-      }
-      return res;
+      return await fetch(url, options);
     }
 
     // Telemetry Polling
@@ -738,31 +1231,162 @@ HTML_PAGE = """<!DOCTYPE html>
         const res = await apiFetch("/api/approvals");
         if (res.ok) {
           const list = await res.json();
-          if (list.length > 0) {
-            approvalsBadge.textContent = list.length;
-            approvalsBadge.style.display = "block";
-          } else {
-            approvalsBadge.style.display = "none";
-          }
+          approvalsBadge.textContent = list.length;
+          approvalsBadge.style.display = list.length > 0 ? "block" : "none";
         }
       } catch (e) {}
     }
     setInterval(checkApprovals, 3000);
     checkApprovals();
 
-    // Telemetry Toggle
-    telemetryBtn.addEventListener("click", () => {
-      telemetryFlyout.classList.toggle("active");
-    });
+    telemetryBtn.addEventListener("click", () => telemetryFlyout.classList.toggle("active"));
 
-    // Emergency Kill Switch
     killBtn.addEventListener("click", async () => {
       setState("idle");
       showSubtitle("Emergency kill switch activated. Automation stopped.");
       await apiFetch("/api/kill_switch", { method: "POST" });
     });
 
-    // Chat / Voice Input Dispatch
+    // SIDEBAR WORKSPACE CONTROLLER
+    function openSidebar(targetUrl) {
+      sidebarPanel.classList.add("open");
+      sidebarToggleBtn.classList.add("active");
+      if (targetUrl) {
+        navigateTo(targetUrl);
+      }
+    }
+    function closeSidebar() {
+      sidebarPanel.classList.remove("open");
+      sidebarToggleBtn.classList.remove("active");
+    }
+    function toggleSidebar() {
+      if (sidebarPanel.classList.contains("open")) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    }
+
+    sidebarToggleBtn.addEventListener("click", toggleSidebar);
+    sidebarCloseBtn.addEventListener("click", closeSidebar);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("sidebar") === "1" || urlParams.get("sidebar") === "true") {
+      openSidebar();
+    }
+
+    function navigateTo(url) {
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "https://" + url;
+      }
+      sidebarUrlInput.value = url;
+      sidebarIframe.style.display = "block";
+      questHudView.classList.remove("active");
+      sidebarIframe.src = url;
+    }
+
+    sidebarGoBtn.addEventListener("click", () => navigateTo(sidebarUrlInput.value));
+    sidebarUrlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") navigateTo(sidebarUrlInput.value);
+    });
+    sidebarReloadBtn.addEventListener("click", () => {
+      if (sidebarIframe.style.display !== "none") {
+        sidebarIframe.src = sidebarIframe.src;
+      } else {
+        loadQuestHud();
+      }
+    });
+    sidebarPopoutBtn.addEventListener("click", () => window.open(sidebarUrlInput.value, "_blank"));
+
+    tabQuest.addEventListener("click", () => {
+      document.querySelectorAll(".side-tab").forEach(t => t.classList.remove("active"));
+      tabQuest.classList.add("active");
+      navigateTo("http://localhost:5174/");
+    });
+
+    tabGoogle.addEventListener("click", () => {
+      document.querySelectorAll(".side-tab").forEach(t => t.classList.remove("active"));
+      tabGoogle.classList.add("active");
+      navigateTo("https://duckduckgo.com");
+    });
+
+    tabHud.addEventListener("click", () => {
+      document.querySelectorAll(".side-tab").forEach(t => t.classList.remove("active"));
+      tabHud.classList.add("active");
+      sidebarIframe.style.display = "none";
+      questHudView.classList.add("active");
+      loadQuestHud();
+    });
+
+    // Real-time Quest HUD Loading
+    async function loadQuestHud() {
+      try {
+        const res = await apiFetch("/api/quest/tasks");
+        if (res.ok) {
+          const d = await res.json();
+          const prog = d.progress || {};
+          playerRankBadge.textContent = prog.rank_title || "E-Rank Novice";
+          playerXpLabel.textContent = (prog.total_xp || 0) + " XP";
+
+          const tasks = d.tasks || [];
+          if (!tasks.length) {
+            questItemsList.innerHTML = "<p style='color:#64748b;font-size:0.8rem;'>No active quests. Tell Cris: 'Cris, assign a new task: Gym workout, level 3'.</p>";
+            return;
+          }
+
+          let html = "";
+          for (const t of tasks) {
+            html += `
+              <div class="quest-item ${t.done ? 'done' : ''}">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                  <button class="quest-checkbox ${t.done ? 'checked' : ''}" onclick="toggleQuestDone('${t.id}')">
+                    ${t.done ? '✓' : ''}
+                  </button>
+                  <div>
+                    <strong style="color:#fff;font-size:0.85rem;">${t.title}</strong>
+                    <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">
+                      Level ${t.intensity} • +${t.xp} XP ${t.scheduled_at ? '• ' + t.scheduled_at : ''}
+                    </div>
+                  </div>
+                </div>
+                <button class="panel-btn danger" style="padding:2px 8px;font-size:0.65rem;" onclick="deleteQuest('${t.id}')">✕</button>
+              </div>
+            `;
+          }
+          questItemsList.innerHTML = html;
+        }
+      } catch (e) {}
+    }
+
+    window.toggleQuestDone = async (id) => {
+      const res = await apiFetch(`/api/quest/tasks/${id}/complete`, { method: "POST" });
+      if (res.ok) {
+        const d = await res.json();
+        showSubtitle(d.message || "Quest completed!");
+        loadQuestHud();
+      }
+    };
+
+    window.deleteQuest = async (id) => {
+      await apiFetch(`/api/quest/tasks/${id}/delete`, { method: "POST" });
+      loadQuestHud();
+    };
+
+    newQuestModalBtn.addEventListener("click", async () => {
+      const title = prompt("Enter Quest Title (e.g. 'Morning workout'):");
+      if (!title) return;
+      const intensity = parseInt(prompt("Intensity Level (1-5):", "2")) || 2;
+      const res = await apiFetch("/api/quest/tasks", {
+        method: "POST",
+        body: { title, intensity }
+      });
+      if (res.ok) {
+        showSubtitle(`Assigned quest: ${title} (Level ${intensity})`);
+        loadQuestHud();
+      }
+    });
+
+    // Chat / Voice Input Dispatch with Intelligent Sidebar & Quest Integration
     async function sendMessage(text) {
       if (!text.trim()) return;
       chatInput.value = "";
@@ -776,9 +1400,23 @@ HTML_PAGE = """<!DOCTYPE html>
         });
         const d = await res.json();
 
-        // Check if response asked to open a module panel
+        // 1. Sidebar open/navigation command
+        if (d.sidebar) {
+          if (d.sidebar.open) {
+            openSidebar(d.sidebar.url);
+          } else if (d.sidebar.open === false) {
+            closeSidebar();
+          }
+        }
+
+        // 2. Panel open command
         if (d.panel) {
           openPanel(d.panel);
+        }
+
+        // 3. Quest updated -> refresh quest HUD
+        if (d.quest_assigned || d.quest_completed) {
+          loadQuestHud();
         }
 
         if (d.reply) {
@@ -800,12 +1438,22 @@ HTML_PAGE = """<!DOCTYPE html>
       if (e.key === "Enter") sendMessage(chatInput.value);
     });
 
-    // Core Button: Toggle Listen
+    // Global Key Shortcuts: Esc to close panels, Ctrl+B to toggle sidebar
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closePanel();
+        closeSidebar();
+      }
+      if (e.ctrlKey && (e.key === "b" || e.key === "B")) {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    });
+
     coreBtn.addEventListener("click", () => {
       if (currentState === "idle") {
         setState("listening");
         showSubtitle("Listening...");
-        // If voice backend is ready or text fallback
         setTimeout(() => {
           if (currentState === "listening") {
             setState("idle");
@@ -817,15 +1465,11 @@ HTML_PAGE = """<!DOCTYPE html>
       }
     });
 
-    // Module Panels Controller
     function closePanel() {
       modulePanel.classList.remove("open");
       document.querySelectorAll(".dock-btn").forEach(b => b.classList.remove("active"));
     }
     panelClose.addEventListener("click", closePanel);
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closePanel();
-    });
 
     async function openPanel(panelId) {
       document.querySelectorAll(".dock-btn").forEach(b => {
@@ -835,30 +1479,17 @@ HTML_PAGE = """<!DOCTYPE html>
       panelBody.innerHTML = "<p>Loading...</p>";
       modulePanel.classList.add("open");
 
-      // Load specific panel data
-      if (panelId === "tasks") {
-        loadTasksPanel();
-      } else if (panelId === "approvals") {
-        loadApprovalsPanel();
-      } else if (panelId === "web_agent") {
-        loadWebAgentPanel();
-      } else if (panelId === "notes") {
-        loadNotesPanel();
-      } else if (panelId === "files") {
-        loadFilesPanel();
-      } else if (panelId === "google") {
-        loadGooglePanel();
-      } else if (panelId === "github") {
-        loadGithubPanel();
-      } else if (panelId === "memory") {
-        loadMemoryPanel();
-      } else if (panelId === "skills") {
-        loadSkillsPanel();
-      } else if (panelId === "logs") {
-        loadLogsPanel();
-      } else if (panelId === "settings") {
-        loadSettingsPanel();
-      }
+      if (panelId === "tasks") loadTasksPanel();
+      else if (panelId === "approvals") loadApprovalsPanel();
+      else if (panelId === "web_agent") loadWebAgentPanel();
+      else if (panelId === "notes") loadNotesPanel();
+      else if (panelId === "files") loadFilesPanel();
+      else if (panelId === "google") loadGooglePanel();
+      else if (panelId === "github") loadGithubPanel();
+      else if (panelId === "memory") loadMemoryPanel();
+      else if (panelId === "skills") loadSkillsPanel();
+      else if (panelId === "logs") loadLogsPanel();
+      else if (panelId === "settings") loadSettingsPanel();
     }
 
     document.querySelectorAll(".dock-btn").forEach(btn => {
@@ -868,7 +1499,7 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     });
 
-    // 1. Tasks Panel
+    // Panel Loaders
     async function loadTasksPanel() {
       const res = await apiFetch("/api/tasks");
       const list = await res.json();
@@ -882,9 +1513,7 @@ HTML_PAGE = """<!DOCTYPE html>
         `;
         document.getElementById("run-task-btn")?.addEventListener("click", () => {
           const val = document.getElementById("new-task-goal").value;
-          if (val) {
-            apiFetch("/api/tasks/run", { method: "POST", body: { goal: val } }).then(() => loadTasksPanel());
-          }
+          if (val) apiFetch("/api/tasks/run", { method: "POST", body: { goal: val } }).then(() => loadTasksPanel());
         });
         return;
       }
@@ -914,7 +1543,6 @@ HTML_PAGE = """<!DOCTYPE html>
     window.resumeTask = (id) => apiFetch(`/api/tasks/${id}/resume`, { method: "POST" }).then(() => loadTasksPanel());
     window.cancelTask = (id) => apiFetch(`/api/tasks/${id}/cancel`, { method: "POST" }).then(() => loadTasksPanel());
 
-    // 2. Approvals Panel
     async function loadApprovalsPanel() {
       const res = await apiFetch("/api/approvals");
       const list = await res.json();
@@ -945,7 +1573,6 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     };
 
-    // 3. Web Agent Panel
     async function loadWebAgentPanel() {
       panelBody.innerHTML = `
         <div class="panel-card">
@@ -964,7 +1591,6 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     }
 
-    // 4. Notes Panel
     async function loadNotesPanel() {
       const res = await apiFetch("/api/productivity/notes");
       const list = await res.json();
@@ -977,12 +1603,9 @@ HTML_PAGE = """<!DOCTYPE html>
     window.addQuickNote = () => {
       const t = prompt("Note Title:");
       const c = prompt("Content:");
-      if (t && c) {
-        apiFetch("/api/productivity/notes", { method: "POST", body: { title: t, content: c } }).then(() => loadNotesPanel());
-      }
+      if (t && c) apiFetch("/api/productivity/notes", { method: "POST", body: { title: t, content: c } }).then(() => loadNotesPanel());
     };
 
-    // 5. Files Panel
     async function loadFilesPanel() {
       const res = await apiFetch("/api/files");
       const data = await res.json();
@@ -996,7 +1619,6 @@ HTML_PAGE = """<!DOCTYPE html>
       `;
     }
 
-    // 6. Google Panel
     async function loadGooglePanel() {
       const res = await apiFetch("/api/google/agenda");
       const data = await res.json();
@@ -1008,7 +1630,6 @@ HTML_PAGE = """<!DOCTYPE html>
       `;
     }
 
-    // 7. GitHub Panel
     async function loadGithubPanel() {
       panelBody.innerHTML = `
         <div class="panel-card">
@@ -1018,7 +1639,6 @@ HTML_PAGE = """<!DOCTYPE html>
       `;
     }
 
-    // 8. Memory Panel
     async function loadMemoryPanel() {
       const res = await apiFetch("/api/memory");
       const facts = await res.json();
@@ -1033,11 +1653,8 @@ HTML_PAGE = """<!DOCTYPE html>
       }
       panelBody.innerHTML = html || "<p>No stored facts in memory.</p>";
     }
-    window.deleteFact = (k) => {
-      apiFetch(`/api/memory/delete`, { method: "POST", body: { key: k } }).then(() => loadMemoryPanel());
-    };
+    window.deleteFact = (k) => apiFetch(`/api/memory/delete`, { method: "POST", body: { key: k } }).then(() => loadMemoryPanel());
 
-    // 9. Skills Panel (Part 5)
     async function loadSkillsPanel() {
       const res = await apiFetch("/api/skills");
       const data = await res.json();
@@ -1061,11 +1678,8 @@ HTML_PAGE = """<!DOCTYPE html>
       }
       panelBody.innerHTML = html;
     }
-    window.approveSkill = (id) => {
-      apiFetch(`/api/skills/approve`, { method: "POST", body: { id } }).then(() => loadSkillsPanel());
-    };
+    window.approveSkill = (id) => apiFetch(`/api/skills/approve`, { method: "POST", body: { id } }).then(() => loadSkillsPanel());
 
-    // 10. Logs Panel
     async function loadLogsPanel() {
       const res = await apiFetch("/api/logs");
       const logs = await res.json();
@@ -1076,7 +1690,6 @@ HTML_PAGE = """<!DOCTYPE html>
       `;
     }
 
-    // 11. Settings Panel
     async function loadSettingsPanel() {
       const res = await apiFetch("/api/settings");
       const d = await res.json();
@@ -1165,6 +1778,12 @@ class CrisWebHandler(SimpleHTTPRequestHandler):
             })
             return
 
+        elif path == "/api/quest/tasks":
+            tasks = self.store.list_quest_tasks()
+            progress = self.store.get_player_progress()
+            self._send_json({"tasks": tasks, "progress": progress})
+            return
+
         elif path == "/api/approvals":
             pending = self.gate.list_pending_requests()
             self._send_json(pending)
@@ -1249,6 +1868,45 @@ class CrisWebHandler(SimpleHTTPRequestHandler):
             self._send_json({"status": "aborted"})
             return
 
+        elif path == "/api/quest/tasks":
+            title = body.get("title", "").strip()
+            intensity = int(body.get("intensity", 2))
+            scheduled_at = body.get("scheduled_at")
+            timer_minutes = body.get("timer_minutes")
+            res = quest_tool.execute(
+                action="assign",
+                title=title,
+                intensity=intensity,
+                scheduled_at=scheduled_at,
+                timer_minutes=timer_minutes,
+                store=self.store
+            )
+            self.logs.append(f"[QUEST] Assigned task: {title} (Level {intensity})")
+            self._send_json(res)
+            return
+
+        elif path.startswith("/api/quest/tasks/") and path.endswith("/complete"):
+            task_id = path.split("/")[4]
+            res = quest_tool.execute(action="complete", task_id=task_id, store=self.store)
+            self.logs.append(f"[QUEST] Completed task: {task_id}")
+            self._send_json(res)
+            return
+
+        elif path.startswith("/api/quest/tasks/") and path.endswith("/delete"):
+            task_id = path.split("/")[4]
+            res = quest_tool.execute(action="delete", task_id=task_id, store=self.store)
+            self.logs.append(f"[QUEST] Deleted task: {task_id}")
+            self._send_json(res)
+            return
+
+        elif path == "/api/download_image":
+            query = body.get("query", "")
+            filename = body.get("filename")
+            res = image_downloader.execute(query=query, filename=filename)
+            self.logs.append(f"[DOWNLOAD] Image: {query}")
+            self._send_json(res)
+            return
+
         elif path == "/api/chat":
             user_msg = body.get("message", "").strip()
             if not user_msg:
@@ -1256,6 +1914,55 @@ class CrisWebHandler(SimpleHTTPRequestHandler):
                 return
 
             self.logs.append(f"[CHAT] User: {user_msg}")
+            lower = user_msg.lower()
+
+            # 1. Sidebar open / close / navigate voice & text intent
+            if re.search(r"\b(open\s+(?:the\s+)?sidebar|সাইডবার\s+খোলো)\b", lower):
+                # Check if specific website/url mentioned: e.g. "open sidebar and go to quest app"
+                target_url = "http://localhost:5174/"
+                url_match = re.search(r"(?:go\s+to|visit)\s+([^\s]+)", lower)
+                if url_match:
+                    raw_u = url_match.group(1).strip()
+                    if "quest" in raw_u:
+                        target_url = "http://localhost:5174/"
+                    elif "google" in raw_u:
+                        target_url = "https://duckduckgo.com"
+                    elif raw_u.startswith("http"):
+                        target_url = raw_u
+                    else:
+                        target_url = f"https://{raw_u}"
+
+                self._send_json({
+                    "sidebar": {"open": True, "url": target_url},
+                    "reply": f"Opening sidebar workspace and navigating to {target_url}."
+                })
+                return
+
+            if re.search(r"\b(close\s+(?:the\s+)?sidebar|সাইডবার\s+বন্ধ\s*করো)\b", lower):
+                self._send_json({
+                    "sidebar": {"open": False},
+                    "reply": "Sidebar workspace closed."
+                })
+                return
+
+            # Direct navigation: "cris, go to <website>"
+            nav_match = re.search(r"^(?:cris,?\s*)?(?:go\s+to|visit)\s+([^\s,]+)", lower)
+            if nav_match and not any(kw in lower for kw in ("google and download", "file manager")):
+                dest = nav_match.group(1).strip()
+                if "quest" in dest:
+                    target_url = "http://localhost:5174/"
+                elif "google" in dest:
+                    target_url = "https://duckduckgo.com"
+                elif dest.startswith("http"):
+                    target_url = dest
+                else:
+                    target_url = f"https://{dest}"
+
+                self._send_json({
+                    "sidebar": {"open": True, "url": target_url},
+                    "reply": f"Navigating to {target_url} in the sidebar workspace."
+                })
+                return
 
             # Check if user asked to open a specific module panel by voice/text
             open_panel_match = re.search(r"(?:open|show|খোলো|দেখাও)\s+(tasks|approvals|web agent|notes|files|google|github|memory|skills|logs|settings)", user_msg, re.IGNORECASE)
@@ -1264,11 +1971,15 @@ class CrisWebHandler(SimpleHTTPRequestHandler):
                 self._send_json({"panel": panel_name, "reply": f"Opening {panel_name.replace('_', ' ')}."})
                 return
 
-            # Execute tool directly if matched
+            # Execute tool directly if matched (app builder, quest assign/complete, download picture, file delete)
             from main import execute_potential_tools
             direct = execute_potential_tools(user_msg, self.registry)
             if direct:
                 reply = direct
+                quest_flag = "quest" in lower or "টাস্ক" in lower
+                self.logs.append(f"[DIRECT ACTION]: {direct[:100]}")
+                self._send_json({"reply": reply, "quest_assigned": quest_flag, "quest_completed": quest_flag})
+                return
             else:
                 lang = detect_language(user_msg)
                 facts = self.store.list_facts()
@@ -1312,7 +2023,6 @@ class CrisWebHandler(SimpleHTTPRequestHandler):
         elif path.startswith("/api/approvals/") and path.endswith("/respond"):
             req_id = path.split("/")[3]
             approve = bool(body.get("approve", False))
-            # Critical Security Boundary: Source is verified as 'authenticated_ui'
             success = self.gate.resolve_request(req_id, approve=approve, source="authenticated_ui")
             self.logs.append(f"[APPROVAL] Request {req_id} {'Approved' if approve else 'Denied'} via Authenticated UI")
             self._send_json({"success": success})

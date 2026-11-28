@@ -129,6 +129,33 @@ class SQLiteStore:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
+
+            # Quest Clock Rank Up (Gamified Tasks & Player Progress)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS quest_tasks (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    intensity INTEGER NOT NULL DEFAULT 2,
+                    xp INTEGER NOT NULL DEFAULT 50,
+                    done INTEGER NOT NULL DEFAULT 0,
+                    scheduled_at TEXT,
+                    timer_minutes INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TEXT
+                );
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS player_progress (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    total_xp INTEGER NOT NULL DEFAULT 0,
+                    rank_title TEXT NOT NULL DEFAULT 'E-Rank Novice',
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            cursor.execute("""
+                INSERT OR IGNORE INTO player_progress (id, total_xp, rank_title)
+                VALUES (1, 0, 'E-Rank Novice');
+            """)
             # Hardening: On startup/restart, unfinished tasks MUST come back as 'paused', never auto-resumed
             cursor.execute("""
                 UPDATE tasks_queue SET status = 'paused' 
@@ -346,4 +373,110 @@ class SQLiteStore:
                 (json.dumps(logs), now, task_id)
             )
             return cur.rowcount > 0
+
+    # ---------------- Quest Clock Rank Up (Gamified Tasks) ----------------
+    def add_quest_task(
+        self,
+        task_id: str,
+        title: str,
+        intensity: int = 2,
+        xp: int = 50,
+        scheduled_at: Optional[str] = None,
+        timer_minutes: Optional[int] = None
+    ) -> Dict[str, Any]:
+        now = datetime.datetime.utcnow().isoformat()
+        with self._get_connection() as conn:
+            conn.cursor().execute("""
+                INSERT INTO quest_tasks (id, title, intensity, xp, done, scheduled_at, timer_minutes, created_at)
+                VALUES (?, ?, ?, ?, 0, ?, ?, ?)
+            """, (task_id, title, intensity, xp, scheduled_at, timer_minutes, now))
+        return {
+            "id": task_id,
+            "title": title,
+            "intensity": intensity,
+            "xp": xp,
+            "done": False,
+            "scheduled_at": scheduled_at,
+            "timer_minutes": timer_minutes,
+            "created_at": now
+        }
+
+    def complete_quest_task(self, identifier: str) -> Optional[Dict[str, Any]]:
+        now = datetime.datetime.utcnow().isoformat()
+        with self._get_connection() as conn:
+            cur = conn.cursor()
+            # Match by exact id or case-insensitive title
+            cur.execute("""
+                SELECT * FROM quest_tasks 
+                WHERE (id = ? OR LOWER(title) LIKE LOWER(?)) AND done = 0
+                LIMIT 1
+            """, (identifier, f"%{identifier}%"))
+            row = cur.fetchone()
+            if not row:
+                return None
+            task = dict(row)
+            task_id = task["id"]
+            xp_gained = task["xp"]
+
+            # Mark task done
+            cur.execute("""
+                UPDATE quest_tasks SET done = 1, completed_at = ? WHERE id = ?
+            """, (now, task_id))
+
+            # Update Player Progress XP
+            cur.execute("SELECT total_xp FROM player_progress WHERE id = 1")
+            prog_row = cur.fetchone()
+            current_xp = prog_row["total_xp"] if prog_row else 0
+            new_xp = current_xp + xp_gained
+
+            # Compute rank title
+            if new_xp >= 2000:
+                rank = "S-Rank Monarch"
+            elif new_xp >= 1000:
+                rank = "A-Rank Champion"
+            elif new_xp >= 600:
+                rank = "B-Rank Warrior"
+            elif new_xp >= 300:
+                rank = "C-Rank Adventurer"
+            elif new_xp >= 100:
+                rank = "D-Rank Apprentice"
+            else:
+                rank = "E-Rank Novice"
+
+            cur.execute("""
+                UPDATE player_progress 
+                SET total_xp = ?, rank_title = ?, updated_at = ?
+                WHERE id = 1
+            """, (new_xp, rank, now))
+
+            task["done"] = True
+            task["completed_at"] = now
+            task["xp_gained"] = xp_gained
+            task["total_xp"] = new_xp
+            task["rank_title"] = rank
+            return task
+
+    def list_quest_tasks(self, include_done: bool = True) -> List[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            cur = conn.cursor()
+            if include_done:
+                cur.execute("SELECT * FROM quest_tasks ORDER BY done ASC, created_at DESC")
+            else:
+                cur.execute("SELECT * FROM quest_tasks WHERE done = 0 ORDER BY created_at DESC")
+            return [dict(r) for r in cur.fetchall()]
+
+    def delete_quest_task(self, identifier: str) -> bool:
+        with self._get_connection() as conn:
+            cur = conn.cursor().execute("""
+                DELETE FROM quest_tasks WHERE id = ? OR LOWER(title) LIKE LOWER(?)
+            """, (identifier, f"%{identifier}%"))
+            return cur.rowcount > 0
+
+    def get_player_progress(self) -> Dict[str, Any]:
+        with self._get_connection() as conn:
+            cur = conn.cursor().execute("SELECT total_xp, rank_title, updated_at FROM player_progress WHERE id = 1")
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+            return {"total_xp": 0, "rank_title": "E-Rank Novice", "updated_at": datetime.datetime.utcnow().isoformat()}
 

@@ -49,7 +49,9 @@ from tools import (
     timers_tool,
     daily_briefing,
     browser_automation,
-    email_tool
+    email_tool,
+    quest_tool,
+    image_downloader
 )
 from integrations.google import calendar_tool, gmail_tool, drive_tool
 from integrations.github import github_client
@@ -87,6 +89,8 @@ def create_tool_registry(gate: ConfirmationGate) -> ToolRegistry:
     reg.register_module(daily_briefing)
     reg.register_module(browser_automation)
     reg.register_module(email_tool)
+    reg.register_module(quest_tool)
+    reg.register_module(image_downloader)
     # Google & GitHub Integrations
     reg.register_module(calendar_tool)
     reg.register_module(gmail_tool)
@@ -118,6 +122,53 @@ def execute_potential_tools(user_text: str, registry: ToolRegistry) -> Optional[
     if "take screenshot" in lower or "capture screen" in lower:
         res = registry.execute("screenshot", {})
         return res.get("message") or res.get("error")
+
+    # Quest task assign intent: 'assign a new task...', 'new task...', 'নতুন টাস্ক...'
+    if re.search(r"\b(assign\s+(?:a\s+)?(?:new\s+)?task|new\s+task|নতুন\s+টাস্ক|টাস্ক\s+দাও)\b", lower):
+        lvl_match = re.search(r"level\s*([1-5])", lower)
+        intensity = int(lvl_match.group(1)) if lvl_match else 2
+        title_raw = re.sub(r"^(?:cris,?\s*)?(?:assign\s+(?:a\s+)?(?:new\s+)?task|new\s+task|নতুন\s+টাস্ক|টাস্ক\s+দাও)[:\s-]*", "", user_text, flags=re.IGNORECASE)
+        clean_title = re.sub(r"level\s*[1-5]", "", title_raw, flags=re.IGNORECASE).strip(" ,.-")
+        res = registry.execute("quest_task", {"action": "assign", "title": clean_title or "New Quest", "intensity": intensity})
+        return res.get("message") or res.get("error")
+
+    # Quest task complete intent: 'task done', 'task completed', 'mark as done', 'টাস্ক শেষ', 'হয়ে গেছে', 'টিক দাও'
+    if re.search(r"\b(task\s+(?:is\s+)?done|task\s+completed|mark\s+task\s+as\s+done|টাস্ক\s+শেষ|হয়ে\s+গেছে|হয়ে\s+গেছে|টিক\s+দাও|টিক\s+মার্ক)\b", lower):
+        title_match = re.sub(r"^(?:cris,?\s*)?(?:task\s+(?:is\s+)?done|task\s+completed|mark\s+task\s+as\s+done|টাস্ক\s+শেষ|হয়ে\s+গেছে|হয়ে\s+গেছে|টিক\s+দাও|টিক\s+মার্ক)[:\s-]*", "", user_text, flags=re.IGNORECASE).strip(" ,.-")
+        res = registry.execute("quest_task", {"action": "complete", "title": title_match})
+        return res.get("message") or res.get("error")
+
+    # Image download intent: 'go to google and download a picture of...', 'download picture of...', 'ছবি ডাউনলোড'
+    if re.search(r"\b(download\s+(?:a\s+)?(?:picture|image)|ছবি\s+ডাউনলোড)\b", lower):
+        query = re.sub(r"^(?:cris,?\s*)?(?:go\s+to\s+google\s+and\s+)?(?:download\s+(?:a\s+)?(?:picture|image)\s*(?:of)?|ছবি\s+ডাউনলোড\s*(?:করো)?)\s*", "", user_text, flags=re.IGNORECASE).strip(" ,.-")
+        res = registry.execute("download_image", {"query": query or "scenery"})
+        return res.get("message") or res.get("error")
+
+    # Affirmative approval intent: 'yes', 'হ্যাঁ', 'confirm', 'approve'
+    if lower in ("yes", "হ্যাঁ", "confirm", "approve"):
+        from core.confirmation_gate import ConfirmationGate
+        gate = ConfirmationGate.get_instance()
+        pending = gate.list_pending_requests()
+        if pending:
+            p_req = pending[0]
+            gate.resolve_request(p_req["id"], approve=True, source="authenticated_ui")
+            if "delete file" in p_req["action"].lower():
+                m = re.search(r"'(.*?)'", p_req["action"])
+                f_path = m.group(1) if m else ""
+                del_tool = registry.get_tool("file_delete")
+                if del_tool:
+                    res = del_tool.execute_fn(file_path=f_path)
+                    return res.get("message") or res.get("error") or f"Action approved and executed: {p_req['action']}"
+                return f"Action approved: {p_req['action']}"
+            return f"Action approved: {p_req['action']}"
+
+    # Delete file intent: 'go to file manager and delete this file...', 'delete file...'
+    if re.search(r"\b(delete\s+(?:this\s+)?file|ফাইল\s+ডিলিট)\b", lower):
+        path = re.sub(r"^(?:cris,?\s*)?(?:go\s+to\s+file\s+manager\s+and\s+)?(?:delete\s+(?:this\s+)?file|ফাইল\s+ডিলিট\s*(?:করো)?)\s*", "", user_text, flags=re.IGNORECASE).strip(" '\"")
+        from core.confirmation_gate import ConfirmationGate
+        gate = ConfirmationGate.get_instance()
+        req_id = gate.create_pending_request(f"Delete file '{path or 'target'}' to Recycle Bin")
+        return f"[CONFIRMATION REQUIRED] Move '{path or 'target file'}' to the Windows Recycle Bin? Reply 'yes' or click Approve in the Approvals panel."
 
     # System status intent
     if "system status" in lower or "pc status" in lower or "check cpu" in lower:

@@ -97,3 +97,41 @@
   - Code hygiene AST test verifying complete absence of `eval`, `exec`, `shell=True`, and `os.system`.
   - Manual test checklist updated in `README.md`.
 
+## Cris v1.4: Quest Clock Rank Up, Web Workspace Sidebar & Fiery Cosmic HUD
+- [x] **Integrated Web Workspace Sidebar (Ctrl+B / Voice)**
+  - Hideable/collapsible slide-out workspace on the right side of the HUD.
+  - Multi-tab switcher: `⚔️ Questlog App` (live embedded Vite instance on port 5174), `📜 Quests HUD` (native fast interactive widget), and `🔍 Web Search` (integrated browser container).
+  - URL navigation bar, Go, Reload, Pop-out into new window, and Close controls.
+  - Opens automatically via voice/chat: *"Cris, open sidebar"*, *"Cris, open sidebar and go to quest app"*, *"Cris, go to <url>"*.
+- [x] **Quest Clock Rank Up Integration & Gamified XP Tracking**
+  - Cloned and integrated user's gamified web app from `https://github.com/sadmansakib-cmd/quest-clock-rank-up` at `apps/quest-clock-rank-up/`.
+  - SQLite persistence schema in `memory/sqlite_store.py`: `quest_tasks` and `player_progress` tables.
+  - Rank system: E-Rank (0-99 XP), D-Rank (100-299 XP), C-Rank (300-599 XP), B-Rank (600-999 XP), A-Rank (1000-1999 XP), S-Rank (2000+ XP).
+  - Autonomous voice/text task assignment: *"Cris, assign a new task: [title], level [1-5]"* -> assigns task with proportional XP rewards.
+  - Autonomous voice/text task completion: *"Cris, [task] complete hoye gese / mark as done / tik mark dao"* -> marks task complete, checks box, awards XP, and recalculates rank progression.
+- [x] **Fiery Golden-Amber Cosmic Arc Reactor Holographic HUD**
+  - Re-implemented HTML5 `<canvas id="arc-canvas">` to faithfully match user's holographic reference design:
+    * Swirling 6-arm golden plasma filament galactic vortex with logarithmic curve equations.
+    * White-hot central singularity nucleus with multi-stop radial gradient glow.
+    * Concentric planetary ring disc with fine micro-grooves and 48 radial radar calibration ticks.
+    * 160-particle 3D stardust ember field with Keplerian differential orbital speeds.
+    * Real-time audio shockwave ripples expanding outward when Cris speaks.
+    * Dynamic state transitions:
+      - **Idle**: Continuous, majestic hypnotic rotation.
+      - **Listening**: Rotation smoothly decelerates and stabilizes into a locked, focused geometric alignment (*"voice shunbe tokhn stable hoye jabe"*).
+      - **Talking**: Rhythmic audio beat pulse and expanding energy shockwaves (*"kotha bolbe tokhn beat korbe"*).
+      - **Working**: High-energy accelerated rotation and particle trails.
+    * Sci-Fi HUD framing: Top telemetry block status meter, technical side brackets, and bottom-right rotating compass reticle dial (`#compass-canvas`).
+    * Ultra-minimalist HUD: Subtitle capsule, status dot, and no decorative clutter (*"less writing thakbe"*).
+- [x] **Autonomous Image Downloader Tool**
+  - Implemented `tools/image_downloader.py` (`download_image`).
+  - Voice/text trigger: *"Cris, go to google and download a picture of [query]"* / *"ছবি ডাউনলোড করো"*.
+  - Downloads images directly to `apps/cris-agent/data/downloads/`.
+- [x] **Safe File Deletion with Confirmation Gate**
+  - Voice/text trigger: *"Cris, go to file manager and delete file [path]"*.
+  - Intercepted strictly by `ConfirmationGate` to prompt for explicit confirmation before moving to Windows Recycle Bin (`send2trash`).
+- [x] **Verification & Test Suite**
+  - 49 unit and integration tests passing across 18 test modules in `apps/cris-agent/tests/runner.py`.
+  - Live end-to-end API test script `tests/verify_live_api.py` passing 100%.
+  - High-resolution UI screenshots captured: `docs/ui/cris_golden_reactor_hud.png` and `docs/ui/cris_sidebar_questlog.png`.
+

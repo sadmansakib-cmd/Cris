@@ -61,7 +61,7 @@ class RateLimiter:
 
 
 class BaseProvider:
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", model_override: str = "") -> str:
         raise NotImplementedError
 
 
@@ -71,12 +71,13 @@ class GeminiProvider(BaseProvider):
         self.api_key = config.gemini_api_key
         self.model = config.gemini_model
 
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", model_override: str = "") -> str:
         if not self.api_key:
             raise ProviderUnavailableError("Gemini API key is missing. Set GEMINI_API_KEY in .env.")
 
+        target_model = model_override or self.model
         # REST endpoint for Gemini API
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={self.api_key}"
 
         contents = []
         if system_prompt:
@@ -114,7 +115,7 @@ class GeminiProvider(BaseProvider):
                 result = json.loads(resp.read().decode("utf-8"))
                 candidates = result.get("candidates", [])
                 if not candidates:
-                    raise ProviderUnavailableError(f"No response candidates returned by model {self.model}.")
+                    raise ProviderUnavailableError(f"No response candidates returned by model {target_model}.")
                 parts = candidates[0].get("content", {}).get("parts", [])
                 text_response = "".join(p.get("text", "") for p in parts)
                 return text_response.strip()
@@ -122,7 +123,7 @@ class GeminiProvider(BaseProvider):
             if e.code in (429, 503):
                 raise
             error_body = e.read().decode("utf-8", errors="ignore")
-            raise ProviderUnavailableError(f"Gemini API HTTP {e.code} for model '{self.model}': {error_body}")
+            raise ProviderUnavailableError(f"Gemini API HTTP {e.code} for model '{target_model}': {error_body}")
         except Exception as e:
             raise ProviderUnavailableError(f"Gemini network error: {e}")
 
@@ -133,10 +134,11 @@ class GroqProvider(BaseProvider):
         self.api_key = config.groq_api_key
         self.model = config.groq_model
 
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", model_override: str = "") -> str:
         if not self.api_key:
             raise ProviderUnavailableError("Groq API key is missing. Set GROQ_API_KEY in .env.")
 
+        target_model = model_override or self.model
         url = "https://api.groq.com/openai/v1/chat/completions"
         messages = []
         if system_prompt:
@@ -144,7 +146,7 @@ class GroqProvider(BaseProvider):
         messages.append({"role": "user", "content": prompt})
 
         payload = {
-            "model": self.model,
+            "model": target_model,
             "messages": messages,
             "temperature": 0.4,
             "max_tokens": 2048
@@ -168,7 +170,7 @@ class GroqProvider(BaseProvider):
             if e.code in (429, 503):
                 raise
             error_body = e.read().decode("utf-8", errors="ignore")
-            raise ProviderUnavailableError(f"Groq API HTTP {e.code} for model '{self.model}': {error_body}")
+            raise ProviderUnavailableError(f"Groq API HTTP {e.code} for model '{target_model}': {error_body}")
         except Exception as e:
             raise ProviderUnavailableError(f"Groq network error: {e}")
 
@@ -179,10 +181,11 @@ class OllamaProvider(BaseProvider):
         self.base_url = config.ollama_base_url.rstrip("/")
         self.model = config.ollama_model
 
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", model_override: str = "") -> str:
+        target_model = model_override or self.model
         url = f"{self.base_url}/api/generate"
         payload = {
-            "model": self.model,
+            "model": target_model,
             "prompt": prompt,
             "system": system_prompt,
             "stream": False
@@ -200,7 +203,7 @@ class OllamaProvider(BaseProvider):
                 result = json.loads(resp.read().decode("utf-8"))
                 return result.get("response", "").strip()
         except Exception as e:
-            raise ProviderUnavailableError(f"Local Ollama error at {self.base_url} (model '{self.model}'): {e}")
+            raise ProviderUnavailableError(f"Local Ollama error at {self.base_url} (model '{target_model}'): {e}")
 
 
 class ResilientLLMClient:
@@ -217,14 +220,20 @@ class ResilientLLMClient:
             "ollama": OllamaProvider(config)
         }
 
-    def _execute_with_backoff(self, provider: BaseProvider, prompt: str, system_prompt: str) -> str:
+    def _execute_with_backoff(self, provider: BaseProvider, prompt: str, system_prompt: str, model_override: str = "") -> str:
         attempts = self.config.rate_limits.retry_max_attempts
         delay = self.config.rate_limits.retry_initial_delay
         max_delay = self.config.rate_limits.retry_max_delay
 
         for attempt in range(1, attempts + 1):
             try:
-                return provider.generate(prompt, system_prompt)
+                try:
+                    if model_override:
+                        return provider.generate(prompt, system_prompt, model_override=model_override)
+                    else:
+                        return provider.generate(prompt, system_prompt)
+                except TypeError:
+                    return provider.generate(prompt, system_prompt)
             except urllib.error.HTTPError as e:
                 if e.code in (429, 503) and attempt < attempts:
                     jitter = random.uniform(0.1, 0.5) * delay
@@ -239,7 +248,7 @@ class ResilientLLMClient:
 
         raise ProviderUnavailableError("Exceeded retry attempts.")
 
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", model_override: str = "") -> str:
         if not self.rate_limiter.can_request():
             raise RateLimitExceededError("Free tier rate limit threshold reached (RPM/RPD). Please wait a moment.")
 
@@ -253,7 +262,7 @@ class ResilientLLMClient:
 
             try:
                 logger.info(f"Attempting generation with provider: {provider_name}")
-                result = self._execute_with_backoff(provider, prompt, system_prompt)
+                result = self._execute_with_backoff(provider, prompt, system_prompt, model_override=model_override)
                 self.rate_limiter.record_request()
                 return result
             except Exception as e:

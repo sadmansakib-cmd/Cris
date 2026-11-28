@@ -31,11 +31,15 @@ def CONFIRMATION_DESCRIPTION_FN(args: Dict[str, Any]) -> str:
     return f"Move '{args.get('file_path')}' to the Windows Recycle Bin"
 
 
-def execute(file_path: str, config: AppConfig | None = None) -> Dict[str, Any]:
+def execute(file_path: str = "", path: str = "", config: AppConfig | None = None) -> Dict[str, Any]:
+    effective_path = file_path or path
+    if not effective_path:
+        return {"success": False, "error": "No file path provided to delete."}
+
     if config is None:
         config = load_config()
 
-    target = Path(file_path).resolve()
+    target = Path(effective_path).resolve()
     if not config.is_path_allowed(target):
         return {
             "success": False,

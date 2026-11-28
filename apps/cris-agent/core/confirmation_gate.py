@@ -141,6 +141,14 @@ class ConfirmationGate:
             self._output_fn(f"[CONFIRMATION GATE] Action REJECTED by user (via {req.source}).")
             return False
 
+    def create_pending_request(self, action_sentence: str, screenshot_path: Optional[str] = None) -> str:
+        """Create and register an unblocking pending approval request for UI display."""
+        req_id = str(uuid.uuid4())[:8]
+        req = ApprovalRequest(req_id, action_sentence, screenshot_path)
+        with self._pending_lock:
+            self._pending_requests[req_id] = req
+        return req_id
+
     def list_pending_requests(self) -> List[Dict]:
         """Return list of active pending approvals for the UI."""
         with self._pending_lock:

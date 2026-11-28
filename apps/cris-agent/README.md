@@ -189,3 +189,45 @@ The HUD server at `http://127.0.0.1:8000` is a hardened security boundary:
   - Restricted strictly to user's numeric ID (ignores all other users).
   - Can only query status and run read-only tools. Any mutating or PC control action must be confirmed locally on the PC screen.
 
+---
+
+## 10. Quest Clock Rank Up & Web Workspace Sidebar (Cris v1.4)
+
+### Web Workspace Sidebar (`Ctrl+B`)
+- **Slide-out Web Container:** Toggleable via header icon `🌐`, keyboard shortcut `Ctrl+B`, or voice (*"Cris, open sidebar"*).
+- **Tabbed Views:**
+  1. `⚔️ Questlog App`: Live embedded instance of `quest-clock-rank-up` running on `http://localhost:5174/`.
+  2. `📜 Quests HUD`: Fast native widget with rank badge, XP counter, and checkbox-interactive quests.
+  3. `🔍 Web Search`: Integrated browser frame for instant web browsing and lookup.
+- **Voice Navigation:** *"Cris, open sidebar and go to google.com"*, *"Cris, go to <url>"*.
+
+### Gamified Quest & Rank System
+- **Voice Assignment:** *"Cris, assign a new task: Gym workout, level 3, 2026-11-28"* / *"নতুন টাস্ক দাও..."*
+  - Intensity levels 1 to 5 award 25, 50, 100, 200, 400 XP.
+- **Voice Completion:** *"Cris, task Gym workout complete hoye gese"* / *"টাস্ক শেষ, টিক দাও"*
+  - Marks quest done, ticks checkmark, adds XP, and updates rank:
+    - **E-Rank:** 0 - 99 XP
+    - **D-Rank:** 100 - 299 XP
+    - **C-Rank:** 300 - 599 XP
+    - **B-Rank:** 600 - 999 XP
+    - **A-Rank:** 1000 - 1999 XP
+    - **S-Rank:** 2000+ XP
+
+### Fiery Golden Cosmic Arc Reactor HUD
+- Visual theme faithfully modeled after the fiery amber/gold holographic vortex reference.
+- **Dynamic Canvas Engine:**
+  - 6-arm logarithmic spiral plasma filaments swirling inward.
+  - White-hot central singularity nucleus with multi-stage radial gradient.
+  - Multi-tier planetary ring disc with micro-grooves and 48 radar calibration ticks.
+  - 160-particle 3D stardust ember field with differential orbital motion.
+  - Corner HUD framing with top status telemetry bar, technical side bracket, and rotating compass reticle dial.
+- **State Behaviors:**
+  - **Idle:** Smooth continuous cosmic rotation.
+  - **Listening:** Rotation decelerates and locks into a stable, focused crystalline alignment.
+  - **Talking:** Rhythmic audio pulse beat and expanding golden shockwave ripples.
+  - **Working:** High-speed scanning sweep with accelerated particle trails.
+
+### Image Downloader & Confirmation-Guarded File Deletion
+- **Image Downloader:** *"Cris, go to google and download a picture of [query]"* -> saves directly to `data/downloads/`.
+- **File Deletion:** *"Cris, go to file manager and delete file [path]"* -> intercepted strictly by `ConfirmationGate`, prompting: *"Move 'test.txt' to Recycle Bin? Reply 'yes' or click Approve in Approvals panel"*. Never permanently deletes.
+
